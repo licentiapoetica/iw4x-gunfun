@@ -205,7 +205,7 @@ doStreakPopup(spree, streak)
 	notifyHello.notifyText = streak;	
 	notifyHello.iconName = getStreakIcon(streak);	
 	notifyHello.hideWhenInMenu = true;
-	notifyHello.sound = "mp_level_up"; 
+	notifyHello.sound = "mp_war_objective_taken"; 
 	self thread maps\mp\gametypes\_hud_message::notifyMessage( notifyHello );
 }
 giveReward(spree)

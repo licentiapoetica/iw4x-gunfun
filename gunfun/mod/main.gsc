@@ -384,10 +384,15 @@ onKilling() {
             if(getDvar("gunmode") == "Fungame")
             {
                 killsInGun = (self.gungameKills % 2);
-                self.weaponhud setText("Weapon: " + self.current + "/" + (level.gungameList.size-1) + " (" + killsInGun + "/2)");
+                self.weaponhud setValue(self.current);
+                self.killhud setValue(killsInGun);
             }
             else
-                self.weaponhud setText("Weapon: " + self.current + "/" + (level.gungameList.size-1)); 	
+            {
+                self.weaponhud setValue(self.current);
+                self.killhud.alpha = 0; // hide kill progress if not Fungame
+                self.killtotalhud.alpha = 0;
+            }
             self refreshCounter(refreshCounter);
             self updateRatio();
         }
@@ -407,13 +412,14 @@ onKilling() {
                         self thread updateWeapon();
                     }
                     killsInGun = (self.gungameKills % 2);
-                    self.weaponhud setText("Weapon: " + self.current + "/" + (level.gungameList.size-1) + " (" + killsInGun + "/2)");
+                    self.weaponhud setValue(self.current);
+                    self.killhud setValue(killsInGun);
                 }
                 else
                 {
                     self.current++;
                     self thread updateWeapon();
-                    self.weaponhud setText("Weapon: " + self.current + "/" + (level.gungameList.size-1));
+                    self.weaponhud setValue(self.current);
                 }
             }
             if(self.current >= (level.gungameList.size-5) && !isDefined(self.markerIcon))
@@ -580,7 +586,7 @@ tryNuke()
     level.state = "aftermatch";
     level notify("nuke");
     if(getDvar("g_gametype") != "gungame_team")
-        self.weaponhud setText("Weapon: " +  (level.gungameList.size-1) + "/" + (level.gungameList.size-1));  
+        self.weaponhud setValue(level.gungameList.size-1);
 
     //self thread mod\api::tryCallApi("increment");
     foreach(player in level.players)
@@ -590,17 +596,57 @@ tryNuke()
 createUI()
 {
     self thread createWeaponHud();	
+    self thread createKillHud();
     self thread Weaponnumber();
     self thread createRatioHud();
 }
 createWeaponHud()
 {
-    self.weaponhud = self createFontString("hudsmall", 1);
-    self.weaponhud setPoint("LEFT", "CENTER", -410, -105); 	
+    self.weaponhud = self createFontString("hudsmall", 1.2);
+    self.weaponhud setPoint("RIGHT", "CENTER", -350, -105); 	
     self.weaponhud.glowalpha = .5; 
     self.weaponhud.color = (1,1,0); 
     self.weaponhud.hideWhenInMenu = true;
-    self.weaponhud.glowcolor = (1,0,0); 		
+    self.weaponhud.glowcolor = (1,0,0);
+    self.weaponhud.label = &"Weapon: ";
+    self.weaponhud setValue(self.current);
+
+    self.weapontotalhud = self createFontString("hudsmall", 1.2);
+    self.weapontotalhud setPoint("LEFT", "CENTER", -350, -105); 	
+    self.weapontotalhud.glowalpha = .5; 
+    self.weapontotalhud.color = (1,1,0); 
+    self.weapontotalhud.hideWhenInMenu = true;
+    self.weapontotalhud.glowcolor = (1,0,0);
+    self.weapontotalhud.label = &" / ";
+    self.weapontotalhud setValue(level.gungameList.size - 1);
+}
+createKillHud()
+{
+    self.killhud = self createFontString("hudsmall", 1.2);
+    self.killhud setPoint("RIGHT", "CENTER", -350, -85); 	
+    self.killhud.glowalpha = .5; 
+    self.killhud.color = (1,1,0); 
+    self.killhud.hideWhenInMenu = true;
+    self.killhud.glowcolor = (1,0,0);
+
+    self.killtotalhud = self createFontString("hudsmall", 1.2);
+    self.killtotalhud setPoint("LEFT", "CENTER", -350, -85); 	
+    self.killtotalhud.glowalpha = .5; 
+    self.killtotalhud.color = (1,1,0); 
+    self.killtotalhud.hideWhenInMenu = true;
+    self.killtotalhud.glowcolor = (1,0,0);
+
+    if(getDvar("gunmode") == "Fungame")
+    {
+        self.killhud.label = &"Kills: ";
+        self.killhud setValue(0);
+        self.killtotalhud.label = &" / 2";
+    }
+    else
+    {
+        self.killhud.alpha = 0;
+        self.killtotalhud.alpha = 0;
+    }
 }
 createRatioHud()
 {
@@ -626,7 +672,7 @@ Weaponnumber() // deprecated
     while(1) 	
     {
         kills++; 	 
-        self.weaponhud setText("Weapon: " + self.current + "/" + (level.gungameList.size - 1)); 	
+        self.weaponhud setValue(self.current);
         //self waittill("killed_enemy"); 
         self waittill("update_weaponNumber");
         //progress updateBar(self.current/level.weapon.size); 			
