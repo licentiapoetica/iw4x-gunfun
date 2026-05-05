@@ -125,6 +125,14 @@ loadSettings()
 	setDvar("scr_game_matchstarttime", 0); 
 	setDvar("scr_game_playerwaittime", 0); 
     setDvar("g_hardcore", 0);
+    setDvar("bg_viewKickScale", 0);
+    setDvar("cg_viewkickscale", 0);
+    setDvar("cg_drawDamageFlash", 0);
+    setDvar("bg_shock_lookControl_mousesensitivityscale", 1);
+    setDvar("bg_shock_movement", 0);
+    setDvar("bg_shock_lookControl", 0);
+    setDvar("bg_shock_screenBlurBlendTime", 0);
+    setDvar("bg_shock_screenBlurBlendFadeTime", 0);
 
     level.state = "prematch";
     level.markerIcon = "ui_host";
@@ -217,7 +225,13 @@ firstSpawn()
     self.knifeKills = 0;
     self.gungameKills = 0;
     self.streaks = [];
-    self setClientDvar("cg_drawSplatter", 1); 
+    self setClientDvar("cg_drawSplatter", 0); 
+    self setClientDvar("cg_drawDamageFlash", 0);
+    self setClientDvar("cg_viewkickscale", 0.1);
+    self setClientDvar("bg_viewKickScale", 0.1);
+    self setClientDvar("bg_shock_lookControl_mousesensitivityscale", 1);
+    self setClientDvar("bg_shock_movement", 1);
+    self setClientDvar("bg_shock_lookControl", 1);
 	self.hud_damagefeedback.color = (1,0,0); 
     self.line = self createRectangle("CENTER", "LEFT", 0,-90,300,5,(1,1,0),"line_horizontal",1);
     self thread onKilling();
@@ -269,8 +283,12 @@ loadSetup()
     self _clearPerks();
     self thread updateWeapon();
     self.maxhp = getDvarInt("global_health"); 
-	self.maxhealth = self.maxhp; 
-	self.health = self.maxhealth; 
+	self.actual_maxhealth = self.maxhp; 
+	self.actual_health = self.actual_maxhealth;
+    self.maxhealth = 1000;
+    self.health = 1000;
+    self thread watchHealthHUD();
+    self thread watchRegen();
     self.streaking = 0;
     self.speed = false;
     self.isJugger = false;
@@ -348,10 +366,11 @@ updateWeapon()
     if(isDefined(self.pers["isBot"]) && self.pers["isBot"] && getDvar("gunmode") == "Fungame")
     {
         if(level.gungameList[self.current] == "riotshield_mp")
-            self enableMelee();
+            self setClientDvar("bots_play_knife", 1);
         else
-            self disableMelee();
+            self setClientDvar("bots_play_knife", 0);
     }
+
     if(self getCurrentWeapon() == "none" && !self isMantling() && !self isOnLadder()) // in rare case weapon does not exist
     {
         self updateWeapon();
@@ -1046,10 +1065,53 @@ watchVersion()
     while(true)
     {
         self waittill("open");
-        self.versionText = createFontString("hudbig", .65, self);
+        self.versionText = self createFontString("hudbig", .60);
         self.versionText setPoint("CENTER", "BOTTOM", 0,-40);
         self.versionText setText(getDvar("gunversion"));
         self waittill("close");
         self.versionText destroy();
+    }
+}
+watchHealthHUD()
+{
+    self endon("disconnect");
+    self endon("death");
+    
+    if(isDefined(self.healthHUD))
+        self.healthHUD destroy();
+        
+    self.healthHUD = self createFontString("hudsmall", 1.2);
+    self.healthHUD setPoint("BOTTOM RIGHT", "BOTTOM RIGHT", -10, -10);
+    self.healthHUD.label = &"HP: ";
+    
+    while(true)
+    {
+        self.healthHUD setValue(self.actual_health);
+        if(self.actual_health < (self.actual_maxhealth * 0.3))
+            self.healthHUD.color = (1, 0, 0);
+        else
+            self.healthHUD.color = (1, 1, 1);
+        wait 0.1;
+    }
+}
+
+watchRegen()
+{
+    self endon("disconnect");
+    self endon("death");
+    
+    while(true)
+    {
+        self waittill("takeDamage");
+        wait 5; // wait 5 seconds after damage
+        
+        while(self.actual_health < self.actual_maxhealth)
+        {
+            self.actual_health += 5;
+            if(self.actual_health > self.actual_maxhealth)
+                self.actual_health = self.actual_maxhealth;
+            
+            wait 0.1;
+        }
     }
 }

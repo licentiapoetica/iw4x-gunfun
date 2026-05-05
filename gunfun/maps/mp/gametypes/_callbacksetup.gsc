@@ -106,12 +106,36 @@ CodeCallback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath
 	}
 	if(level.state != "ingame")
 		iDamage = 0;
+
+    if(self.actual_health - iDamage > 0 && iDamage > 0)
+    {
+        self.actual_health -= iDamage;
+        self.health = 950; // Keep engine health high to avoid bloody screen
+        if(isPlayer(eAttacker))
+            eAttacker thread maps\mp\gametypes\_damagefeedback::updateDamageFeedback("standard");
+        
+        self playRumbleOnEntity("damage_heavy");
+        iDamage = 20; // Enough to trigger indicator on 1000 maxhealth
+    }
+    else if(iDamage > 0)
+    {
+        iDamage = self.health; // Lethal hit
+    }
+
     [[level.callbackPlayerDamage]](eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, timeOffset);
 }
 
 updateDamageHud()
 {
-	wait .1;
+	for(i=0;i<10;i++)
+	{
+		self stopShellshock();
+        if(isDefined(self.speed) && self.speed)
+            self setMoveSpeedScale(1.6);
+        else
+            self setMoveSpeedScale(1);
+		wait .05;
+	}
 	self notify("takeDamage");
 }
 createDamageHud()
