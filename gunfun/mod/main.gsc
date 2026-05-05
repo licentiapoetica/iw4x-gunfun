@@ -15,6 +15,7 @@
 
 Init()
 {
+    level._effect["claymore_explode"] = loadfx("explosions/tanker_explosion");
     loadSettings();
     thread mod\weapons::loadWeapons();
     thread mod\streaks::loadStreaks();
@@ -292,6 +293,7 @@ loadSetup()
     self thread watchHealthHUD();
     self thread watchRegen();
     self thread watchDeagleGL();
+    self thread watchM40A3();
     self thread watchHUD();
     self.streaking = 0;
     self.speed = false;
@@ -1151,5 +1153,30 @@ watchHUD()
         self setClientDvar("cg_drawTurretCrosshair", 0);
         self setClientDvar("cg_cursorHints", 0);
         wait 1;
+    }
+}
+
+watchM40A3()
+{
+    self endon("disconnect");
+    while(true)
+    {
+        self waittill("weapon_fired", weaponName);
+        if(weaponName == "m40a3_mp")
+        {
+            angles = self getPlayerAngles();
+            forward = anglesToForward(angles);
+            start = self getEye();
+            end = start + (forward * 10000);
+            trace = BulletTrace(start, end, true, self);
+            
+            if(isDefined(trace["position"]))
+            {
+                pos = trace["position"] + (trace["normal"] * 10);
+                RadiusDamage(pos, 150, 200, 50, self);
+                PlayFX(level._effect["claymore_explode"], pos);
+                self PlaySound("claymore_activated");
+            }
+        }
     }
 }

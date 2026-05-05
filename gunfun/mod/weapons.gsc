@@ -387,6 +387,7 @@ loadFungameList()
     level.gungameList[0] = "defaultweapon_mp";
 
     // PISTOLS (1-20)
+    addFungameWeapon("m40a3_mp");
     addFungameWeapon("usp_mp");
     addFungameWeapon("usp_silencer_mp");
     addFungameWeapon("usp_tactical_mp");
@@ -442,6 +443,7 @@ loadFungameList()
     addFungameWeapon("m1014_reflex_mp");
     addFungameWeapon("aa12_mp");
     addFungameWeapon("aa12_grip_mp");
+    addFungameWeapon("m40a3_mp");
     addFungameWeapon("aa12_silencer_mp");
     addFungameWeapon("aa12_reflex_mp");
     addFungameWeapon("striker_mp");
@@ -462,6 +464,7 @@ loadFungameList()
     addFungameWeapon("mp5k_rof_mp");
     addFungameWeapon("uzi_mp");
     addFungameWeapon("uzi_silencer_mp");
+    addFungameWeapon("deserteagle_akimbo_mp");
     addFungameWeapon("uzi_reflex_mp");
     addFungameWeapon("uzi_akimbo_mp");
     addFungameWeapon("uzi_rof_mp");
@@ -473,6 +476,7 @@ loadFungameList()
     addFungameWeapon("kriss_mp");
     addFungameWeapon("kriss_silencer_mp");
     addFungameWeapon("kriss_reflex_mp");
+    addFungameWeapon("m40a3_mp");
     addFungameWeapon("kriss_akimbo_mp");
     addFungameWeapon("kriss_rof_mp");
     addFungameWeapon("ump45_mp");
@@ -489,11 +493,13 @@ loadFungameList()
     wait .05;
     // ASSAULT RIFLES (91-120)
     addFungameWeapon("m4_mp");
+    addFungameWeapon("deserteagle_akimbo_mp");
     addFungameWeapon("m4_silencer_mp");
     addFungameWeapon("m4_reflex_mp");
     addFungameWeapon("m4_acog_mp");
     addFungameWeapon("m4_gl_mp");
     addFungameWeapon("scar_mp");
+    addFungameWeapon("m40a3_mp");
     addFungameWeapon("scar_silencer_mp");
     addFungameWeapon("scar_reflex_mp");
     addFungameWeapon("scar_acog_mp");
@@ -518,6 +524,7 @@ loadFungameList()
     addFungameWeapon("famas_reflex_mp");
     addFungameWeapon("famas_acog_mp");
     addFungameWeapon("famas_fmj_mp");
+    addFungameWeapon("ak47classic_mp");
 
     wait .05;
     // LMGS (121-135)
@@ -548,6 +555,8 @@ loadFungameList()
     addFungameWeapon("wa2000_thermal_mp");
     addFungameWeapon("m21_mp");
     addFungameWeapon("m21_thermal_mp");
+    addFungameWeapon("m40a3_mp");
+    addFungameWeapon("r700_mp");
 
     // LAUNCHERS & SPECIAL (146-150)
     addFungameWeapon("m79_mp");
