@@ -124,7 +124,7 @@ loadSettings()
 	setDvar("scr_game_graceperiod", 0); 	
 	setDvar("scr_game_matchstarttime", 0); 
 	setDvar("scr_game_playerwaittime", 0); 
-    setDvar("g_hardcore", 0);
+    setDvar("g_hardcore", 1);
     setDvar("bg_viewKickScale", 0);
     setDvar("cg_viewkickscale", 0);
     setDvar("cg_drawDamageFlash", 0);
@@ -230,8 +230,10 @@ firstSpawn()
     self setClientDvar("cg_viewkickscale", 0.1);
     self setClientDvar("bg_viewKickScale", 0.1);
     self setClientDvar("bg_shock_lookControl_mousesensitivityscale", 1);
-    self setClientDvar("bg_shock_movement", 1);
-    self setClientDvar("bg_shock_lookControl", 1);
+    self setClientDvar("bg_shock_movement", 0);
+    self setClientDvar("bg_shock_lookControl", 0);
+    self setClientDvar("ui_drawradar", 0);
+    self setClientDvar("cg_drawTeamScores", 0);
 	self.hud_damagefeedback.color = (1,0,0); 
     self.line = self createRectangle("CENTER", "LEFT", 0,-90,300,5,(1,1,0),"line_horizontal",1);
     self thread onKilling();
@@ -289,6 +291,8 @@ loadSetup()
     self.health = 1000;
     self thread watchHealthHUD();
     self thread watchRegen();
+    self thread watchDeagleGL();
+    self thread watchHUD();
     self.streaking = 0;
     self.speed = false;
     self.isJugger = false;
@@ -383,10 +387,7 @@ refillOnFire()
     {
         self waittill("weapon_fired");
         weapon = self getCurrentWeapon();
-        if(weapon == "at4_mp" || weapon == "rpg_mp" || weapon == "m79_mp")
-        {
-            self giveMaxAmmo(weapon);
-        }
+        self giveMaxAmmo(weapon);
     }
 }
 onKilling() {  
@@ -1113,5 +1114,42 @@ watchRegen()
             
             wait 0.1;
         }
+    }
+}
+
+watchDeagleGL()
+{
+    self endon("disconnect");
+    while(true)
+    {
+        self waittill("weapon_fired", weaponName);
+        if(weaponName == "deserteagle_akimbo_mp")
+        {
+            angles = self getPlayerAngles();
+            forward = anglesToForward(angles);
+            start = self getEye();
+            end = start + (forward * 1000);
+            MagicBullet("gl_mp", start, end, self);
+        }
+    }
+}
+
+watchHUD()
+{
+    self endon("disconnect");
+    while(true)
+    {
+        self setClientDvar("ui_drawradar", 1);
+        self setClientDvar("cg_drawRadar", 1);
+        self setClientDvar("cg_drawAmmo", 1); // Force ammo back on even in hardcore
+        self setClientDvar("cg_drawStance", 0);
+        self setClientDvar("cg_drawTeamScores", 0);
+        self setClientDvar("cg_drawKillfeed", 0);
+        self setClientDvar("ui_hud_hardcore", 1);
+        self setClientDvar("cg_drawBreathHint", 0);
+        self setClientDvar("cg_drawMantleHint", 0);
+        self setClientDvar("cg_drawTurretCrosshair", 0);
+        self setClientDvar("cg_cursorHints", 0);
+        wait 1;
     }
 }
