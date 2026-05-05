@@ -344,6 +344,14 @@ updateWeapon()
         if(level.state == "prematch")
             self setMoveSpeedScale(0);
     }   
+
+    if(isDefined(self.pers["isBot"]) && self.pers["isBot"] && getDvar("gunmode") == "Fungame")
+    {
+        if(level.gungameList[self.current] == "riotshield_mp")
+            self enableMelee();
+        else
+            self disableMelee();
+    }
     if(self getCurrentWeapon() == "none" && !self isMantling() && !self isOnLadder()) // in rare case weapon does not exist
     {
         self updateWeapon();
