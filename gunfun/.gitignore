@@ -1,0 +1,4 @@
+*.log*
+maps/
+scriptdata/
+demos/
