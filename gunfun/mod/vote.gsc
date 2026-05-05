@@ -495,12 +495,11 @@ startVote()
 		}
 	}
 	mod\main::initializeGametype(level.options[number].gamemode);
-	setDvar("sv_maprotation", ("map " + level.options[number].map));
-	setDvar("g_hardcore", 0);
-	wait 0.5;
-	exitLevel(false);
-	level.currentNextMap = level.options[number].map;
+	setDvar("sv_mapRotationCurrent", "map " + level.options[number].map);
+	setDvar("sv_mapRotation", "map " + level.options[number].map);
 	level notify("endVote");
+	wait 0.1;
+	map(level.options[number].map);
 }
 doControls()
 {

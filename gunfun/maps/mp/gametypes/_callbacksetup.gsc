@@ -172,7 +172,7 @@ CodeCallback_PlayerKilled(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon
 			if(getDvar("gunmode") != "Kill Confirmed")
 			{
 				if(sWeapon == "riotshield_mp" && getDvar("gunmode") == "Fungame")
-					eAttacker.gungameKills += 2;
+					eAttacker.gungameKills += getDvarInt("gun_kills", 1);
 				else
 					eAttacker.gungameKills++;
 			}

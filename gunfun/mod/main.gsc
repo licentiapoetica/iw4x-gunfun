@@ -39,6 +39,7 @@ setGamemodes()
 initializeGametype(type) // called in vote.gsc after first map
 {
     setDvar("gunmode", type);
+    setDvar("gun_kills", 1); // Default to 1 kill per weapon
     if(type == "Team Gungame")
         setDvar("g_gametype", "gungame_team");
     else
@@ -89,6 +90,7 @@ initializeGametype(type) // called in vote.gsc after first map
             setDvar("streaks_online", 1);
             setDvar("jump_height", 0.5);
             setDvar("amount_weapons", 150);
+            setDvar("gun_kills", 1);
             break;    
         default: // not required
             setDvar("global_health", 70);
@@ -333,7 +335,7 @@ updateWeapon()
     if(level.state == "prematch" || level.state == "ingame")
         self show();
     if(self.isJugger)
-        self setMoveSpeedScale(.7);
+        self setMoveSpeedScale(1);
     else if(self.speed)
          self setMoveSpeedScale(1.6);
     if(level.state ==  "prematch")
@@ -381,16 +383,19 @@ onKilling() {
             self thread scorepopup(-100);	
             kills--;
             refreshCounter++;
-            if(getDvar("gunmode") == "Fungame")
+            killsPerWeapon = getDvarInt("gun_kills", 1);
+            if(killsPerWeapon > 1)
             {
-                killsInGun = (self.gungameKills % 2);
+                killsInGun = (self.gungameKills % killsPerWeapon);
                 self.weaponhud setValue(self.current);
                 self.killhud setValue(killsInGun);
+                self.killhud.alpha = 1;
+                self.killtotalhud.alpha = 1;
             }
             else
             {
                 self.weaponhud setValue(self.current);
-                self.killhud.alpha = 0; // hide kill progress if not Fungame
+                self.killhud.alpha = 0;
                 self.killtotalhud.alpha = 0;
             }
             self refreshCounter(refreshCounter);
@@ -404,14 +409,15 @@ onKilling() {
             self.streaking++; 	
             if(getDvar("g_gametype") != "gungame_team")
             {
-                if(getDvar("gunmode") == "Fungame")
+                killsPerWeapon = getDvarInt("gun_kills", 1);
+                if(killsPerWeapon > 1)
                 {
-                    if(self.gungameKills % 2 == 0)
+                    if(self.gungameKills % killsPerWeapon == 0)
                     {
                         self.current++;
                         self thread updateWeapon();
                     }
-                    killsInGun = (self.gungameKills % 2);
+                    killsInGun = (self.gungameKills % killsPerWeapon);
                     self.weaponhud setValue(self.current);
                     self.killhud setValue(killsInGun);
                 }
@@ -636,11 +642,15 @@ createKillHud()
     self.killtotalhud.hideWhenInMenu = true;
     self.killtotalhud.glowcolor = (1,0,0);
 
-    if(getDvar("gunmode") == "Fungame")
+    killsPerWeapon = getDvarInt("gun_kills", 1);
+    if(killsPerWeapon > 1)
     {
         self.killhud.label = &"Kills: ";
         self.killhud setValue(0);
-        self.killtotalhud.label = &" / 2";
+        self.killtotalhud.label = &" / ";
+        self.killtotalhud setValue(killsPerWeapon);
+        self.killhud.alpha = 1;
+        self.killtotalhud.alpha = 1;
     }
     else
     {
