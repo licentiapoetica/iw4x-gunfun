@@ -89,7 +89,7 @@ initializeGametype(type) // called in vote.gsc after first map
             setDvar("global_health", 60);
             setDvar("speed", 1.5);
             setDvar("streaks_online", 1);
-            setDvar("jump_height", 0.5);
+            setDvar("jump_height", 70);
             setDvar("amount_weapons", 0); // if 0 uses whole list of possible guns, if set > 0 uses amount larger than 0
             setDvar("gun_kills", 1);
             break;    
@@ -147,12 +147,26 @@ loadSettings()
     
     // Bot Management
     setDvar("bots_main", 1);
-    setDvar("bots_manage_fill", 12);
-    setDvar("bots_skill", 5);
+    setDvar("bots_manage_fill", 10);         // total slots: players + bots = 10
+    setDvar("bots_manage_fill_mode", 0);     // mode 0 = count players AND bots
+    setDvar("bots_manage_fill_kick", 1);     // kick a bot when a human pushes count over 10
+    // Skill: 2 hard bots (1 per internal team), rest are brain dead
+    setDvar("bots_skill", 8);
+    setDvar("bots_skill_allies_hard", 1);
+    setDvar("bots_skill_allies_med", 0);
+    setDvar("bots_skill_axis_hard", 1);
+    setDvar("bots_skill_axis_med", 0);
     setDvar("bots_play_knife", 0);
     setDvar("bots_main_chat", 0);
     
     SetDvarIfUninitialized("scr_nuke_enabled", 1);
+    // Cache mode flags as level vars — avoids repeated getDvar() in hot per-player loops.
+    level.isTeamGame = (getDvar("g_gametype") == "gungame_team");
+    level.isKillConfirmed = (getDvar("gunmode") == "Kill Confirmed");
+    // Suppress engine-level developer prints (e.g. "Replacing perk X in slot Y with Z").
+    // These come from native C code and cannot be silenced any other way.
+    // developer 0 is standard for production servers.
+    setDvar("developer", 0);
 }
 deleteSentries()
 {
@@ -308,8 +322,20 @@ loadSetup()
 	self setMoveSpeedScale(getDvarFloat("speed")); 
     self maps\mp\perks\_perks::givePerk("specialty_fastreload"); // due to icys request :)
     self maps\mp\perks\_perks::givePerk("specialty_falldamage"); // due to icys request :)
-    self maps\mp\perks\_perks::givePerk("specialty_quickdraw"); 
-
+    self maps\mp\perks\_perks::givePerk("specialty_quickdraw");
+    // Static HUD dvars set once per spawn — moved from watchHUD's 1-second polling loop.
+    // These values never change mid-game so there is no need to re-apply them every second.
+    self setClientDvar("cg_drawRadar", 1);
+    self setClientDvar("cg_drawStance", 0);
+    self setClientDvar("cg_drawTeamScores", 0);
+    self setClientDvar("cg_drawKillfeed", 0);
+    self setClientDvar("cg_drawBreathHint", 0);
+    self setClientDvar("cg_drawMantleHint", 0);
+    self setClientDvar("cg_drawTurretCrosshair", 0);
+    self setClientDvar("cg_cursorHints", 0);
+    // Keep g_hardcore=1 for server-side gameplay rules but show the normal client HUD
+    // so our custom health/weapon overlays render correctly without fighting hardcore suppression.
+    self setClientDvar("ui_hud_hardcore", 0);
     self thread takeInvalidWeapon();
     if(level.state ==  "prematch")
     {
@@ -343,6 +369,16 @@ getEnemyTeam()
 }
 updateWeapon()
 {
+    // Safety: end this thread if the match is over or the player is gone/dead.
+    level endon("nuke");
+    self endon("disconnect");
+    self endon("death");
+    // Exclusivity guard: notifying "updateWeapon" kills any previously running
+    // instance of this function on this player, then we register to die the same
+    // way when the NEXT call arrives. Only one updateWeapon thread per player.
+    self notify("updateWeapon");
+    self endon("updateWeapon");
+
     if(self.current > (level.gungameList.size - 1))
     {
         self thread tryNuke();
@@ -378,14 +414,30 @@ updateWeapon()
     if(isDefined(self.pers["isBot"]) && self.pers["isBot"] && getDvar("gunmode") == "Fungame")
     {
         if(level.gungameList[self.current] == "riotshield_mp")
+        {
             self setClientDvar("bots_play_knife", 1);
+            // Bots can't trigger the riot shield melee button, so we simulate it.
+            self thread watchBotRiotShield();
+        }
         else
+        {
             self setClientDvar("bots_play_knife", 0);
+            self notify("botshield"); // shut down any running shield bash thread
+        }
     }
+    // NOTE: The old recursive self-call "self updateWeapon()" was removed here.
+    // It caused unbounded call-stack growth when getCurrentWeapon() returned "none".
+    // takeInvalidWeapon() polls every frame and will re-issue the thread if needed.
 
-    if(self getCurrentWeapon() == "none" && !self isMantling() && !self isOnLadder()) // in rare case weapon does not exist
+    // Bounded retry: the engine may need a few frames after switchtoweaponimmediate
+    // to register the active weapon. Loop up to 8 frames re-issuing the switch.
+    // This is the safe replacement for the old unbounded recursive call.
+    retries = 0;
+    while(self getCurrentWeapon() == "none" && !self isMantling() && !self isOnLadder() && retries < 8)
     {
-        self updateWeapon();
+        self switchtoweaponimmediate(level.gungameList[self.current]);
+        waitFrame();
+        retries++;
     }
 }
 refillOnFire()
@@ -399,28 +451,29 @@ refillOnFire()
         self giveMaxAmmo(weapon);
     }
 }
-onKilling() {  
-	self endon("disconnect"); 
-	level endon("nuke"); 
-	self.multiplier = 0; 
-	self.amount = 0; 
-	//kills = self.pers["kills"]; 
+onKilling() {
+	self endon("disconnect");
+	level endon("nuke");
+	self.multiplier = 0;
+	self.amount = 0;
     kills = 0;
     refreshCounter = 0;
-	self.scoretext = self createText("hudbig", 1, "CENTER", "CENTER", 0, 0, .7,""); 
-	self.scoretext_amount = self createText("hudbig", 1, "CENTER", "CENTER", -10, 20, .7,""); 	
-	self.multitext = []; 
-	for(i=2;i<6;i++) 
-	    self.multitext[i] = self createText("hudbig", .6, "CENTER", "CENTER", 50, (i * 20), .7,"");         
+    // Cache settings that never change mid-match — eliminates getDvar()/getDvarInt()
+    // native calls inside this loop which runs every 0.3s per player.
+    killsPerWeapon = getDvarInt("gun_kills", 1);
+	self.scoretext = self createText("hudbig", 1, "CENTER", "CENTER", 0, 0, .7,"");
+	self.scoretext_amount = self createText("hudbig", 1, "CENTER", "CENTER", -10, 20, .7,"");
+	self.multitext = [];
+	for(i=2;i<6;i++)
+	    self.multitext[i] = self createText("hudbig", .6, "CENTER", "CENTER", 50, (i * 20), .7,"");
 	while(true)
     {
         wait .3;
         if(kills > self.gungameKills) // not called on team gungame
         {
-            self thread scorepopup(-100);	
+            self thread scorepopup(-100);
             kills--;
             refreshCounter++;
-            killsPerWeapon = getDvarInt("gun_kills", 1);
             if(killsPerWeapon > 1)
             {
                 killsInGun = (self.gungameKills % killsPerWeapon);
@@ -443,10 +496,9 @@ onKilling() {
             kills++;
             refreshCounter++;
             self thread scorepopup(100);
-            self.streaking++; 	
-            if(getDvar("g_gametype") != "gungame_team")
+            self.streaking++;
+            if(!level.isTeamGame) // cached in loadSettings — avoids getDvar() per kill
             {
-                killsPerWeapon = getDvarInt("gun_kills", 1);
                 if(killsPerWeapon > 1)
                 {
                     if(self.gungameKills % killsPerWeapon == 0)
@@ -469,7 +521,7 @@ onKilling() {
                 self thread initCreateMarkerIcon();
             self refreshCounter(refreshCounter);
             self updateRatio();
-        }  
+        }
     }
 }
 updateRatio()
@@ -567,8 +619,8 @@ scorepopup(amount)
   	self.scoretext.color = color; 	
 	self.scoretext.glowColor = glowColor; 
 	self.scoretext SetPulseFX( 40, 2000, 600 );
-    if(getDvar("gunmode") == "Kill Confirmed")
- 	    self.scoretext setText("Upgraded!^3"); 
+    if(level.isKillConfirmed) // cached in loadSettings — avoids getDvar() per popup
+	    self.scoretext setText("Upgraded!^3");
     else
         self.scoretext setText("Killed!^3");
 	self.scoretext_amount.color = color; 
@@ -624,9 +676,15 @@ lowerMultitext(multiplier)
 } 
 tryNuke()
 {
-    if(isDefined(level.nukeIncoming) || level.state == "aftermatch")
+    // Use level.nukeTriggered as OUR re-entry guard.
+    // DO NOT use level.nukeIncoming here — that flag is owned by the engine's
+    // _nuke.gsc::tryUseNuke(). Setting it before calling tryUseNuke causes the
+    // engine to see "nuke already on its way" and abort without firing the nuke.
+    if(isDefined(level.nukeTriggered) || level.state == "aftermatch")
         return;
 
+    // Set our custom flag and state immediately (atomic — no yield before this).
+    level.nukeTriggered = true;
     level.state = "aftermatch";
     
     if(getDvarInt("scr_nuke_enabled", 1) == 0)
@@ -654,9 +712,10 @@ tryNuke()
 }
 createUI()
 {
-    self thread createWeaponHud();	
+    self thread createWeaponHud();
     self thread createKillHud();
-    self thread Weaponnumber();
+    // Weaponnumber() removed — marked deprecated, waits on "update_weaponNumber"
+    // which is never notified anywhere. Was a zombie thread per player.
     self thread createRatioHud();
 }
 createWeaponHud()
@@ -770,9 +829,9 @@ takeInvalidWeapon()
     level endon("nuke");
     counter = 0;
     wait 3;
-    while(1) 	
+    while(1)
     {
-        waitFrame(); 
+        wait 0.1; // was waitFrame() (~60/s) — 10/s is ample for a safety-net poller
         if(!isAlive(self))
             continue;
         if(self isMantling())
@@ -1113,13 +1172,20 @@ watchHealthHUD()
     self.healthHUD setPoint("BOTTOM RIGHT", "BOTTOM RIGHT", -10, -10);
     self.healthHUD.label = &"HP: ";
     
+    lastHealth = -1; // sentinel: forces first-tick update
     while(true)
     {
-        self.healthHUD setValue(self.actual_health);
-        if(self.actual_health < (self.actual_maxhealth * 0.3))
-            self.healthHUD.color = (1, 0, 0);
-        else
-            self.healthHUD.color = (1, 1, 1);
+        // Only push to the HUD element when the value actually changed.
+        // Eliminates 10 setValue() native calls/sec when player is at full health.
+        if(self.actual_health != lastHealth)
+        {
+            lastHealth = self.actual_health;
+            self.healthHUD setValue(self.actual_health);
+            if(self.actual_health < (self.actual_maxhealth * 0.3))
+                self.healthHUD.color = (1, 0, 0);
+            else
+                self.healthHUD.color = (1, 1, 1);
+        }
         wait 0.1;
     }
 }
@@ -1150,6 +1216,7 @@ watchDeagleGL()
 {
     level endon("nuke");
     self endon("disconnect");
+    self endon("death"); // prevent thread accumulation across respawns
     while(true)
     {
         self waittill("weapon_fired", weaponName);
@@ -1173,20 +1240,14 @@ watchHUD()
 {
     level endon("nuke");
     self endon("disconnect");
+    self endon("death"); // prevent thread accumulation across respawns
     while(true)
     {
+        // Only re-apply dvars the engine may reset mid-game (radar via UAV, ammo via class events).
+        // ui_hud_hardcore is set to 0 once per spawn in loadSetup() and does not need refreshing.
         self setClientDvar("ui_drawradar", 1);
-        self setClientDvar("cg_drawRadar", 1);
-        self setClientDvar("cg_drawAmmo", 1); // Force ammo back on even in hardcore
-        self setClientDvar("cg_drawStance", 0);
-        self setClientDvar("cg_drawTeamScores", 0);
-        self setClientDvar("cg_drawKillfeed", 0);
-        self setClientDvar("ui_hud_hardcore", 1);
-        self setClientDvar("cg_drawBreathHint", 0);
-        self setClientDvar("cg_drawMantleHint", 0);
-        self setClientDvar("cg_drawTurretCrosshair", 0);
-        self setClientDvar("cg_cursorHints", 0);
-        wait 1;
+        self setClientDvar("cg_drawAmmo", 1);
+        wait 5;
     }
 }
 
@@ -1194,6 +1255,7 @@ watchM40A3()
 {
     level endon("nuke");
     self endon("disconnect");
+    self endon("death"); // prevent thread accumulation across respawns
     while(true)
     {
         self waittill("weapon_fired", weaponName);
@@ -1212,6 +1274,58 @@ watchM40A3()
                 PlayFX(level._effect["claymore_explode"], pos);
                 self PlaySound("claymore_activated");
                 wait .1;
+            }
+        }
+    }
+}
+
+// Scripted riot shield bash for bots.
+// Bots cannot press the melee button to bash with the riot shield, so this thread
+// checks proximity + forward arc every 0.8s and applies damage directly,
+// matching the real shield bash range (~85 units) and cooldown (~0.8s).
+watchBotRiotShield()
+{
+    level endon("nuke");
+    self endon("death");
+    self endon("disconnect");
+    // Exclusivity guard: kill any previous instance when weapon changes re-trigger this.
+    self notify("botshield");
+    self endon("botshield");
+
+    while(true)
+    {
+        wait 0.8; // ~length of real shield bash animation / cooldown
+
+        if(self getCurrentWeapon() != "riotshield_mp")
+            continue;
+
+        selfPos = self getOrigin();
+        forward = anglesToForward(self getPlayerAngles());
+
+        foreach(player in level.players)
+        {
+            if(player == self) continue;
+            if(!isAlive(player)) continue;
+
+            toPlayer = player getOrigin() - selfPos;
+            dist = Length(toPlayer);
+
+            if(dist > 85) continue; // riot shield melee range
+
+            // Dot product: check player is within ~75 degree forward arc.
+            nx = toPlayer[0] / dist;
+            ny = toPlayer[1] / dist;
+            nz = toPlayer[2] / dist;
+            dot = (forward[0] * nx) + (forward[1] * ny) + (forward[2] * nz);
+
+            if(dot > 0.25) // 0.25 ~= 75 degree half-angle
+            {
+                // Apply riot shield bash damage (100 = standard MW2 shield bash)
+                player thread maps\mp\gametypes\_damage::finishPlayerDamageWrapper(
+                    self, self, 100, 0, "MOD_MELEE", "riotshield_mp",
+                    player getOrigin(), player getOrigin(), "none", 0, 0
+                );
+                break; // one target per swing
             }
         }
     }

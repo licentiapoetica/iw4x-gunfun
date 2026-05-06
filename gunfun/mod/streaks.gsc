@@ -19,6 +19,10 @@ loadStreaks()
     precacheShader("cardicon_cod4");
 	precacheShader("cardicon_loadedfinger");
 
+    // Pre-cache Jetpack FX at level init (loadfx must NOT be called at runtime).
+    level._effect["jetpack_smoke"] = loadfx("smoke/smoke_trail_white_heli");
+    level._effect["jetpack_flare"] = loadfx("misc/flares_cobra");
+
     level.streaks3 = [];
     level.streaks6 = [];
     level.streaks9 = [];
@@ -231,11 +235,9 @@ giveStreak(streak)
             self.speed = true;
             wait 1;
             self maps\mp\perks\_perks::givePerk("specialty_lightweight");
-            self maps\mp\perks\_perks::givePerk("specialty_lightweight");
             self setMoveSpeedScale(1.6);
             self.setMoveSpeedScale = 1.6;
-            //self thread spawnFireLoop();
-            break;   
+            break;
         case "Riotshield":
             self AttachShieldModel( "weapon_riot_shield_mp", "tag_shield_back" );
             break; 
@@ -260,6 +262,7 @@ giveStreak(streak)
             break;   
 		case "No Reload":
 			self thread NoReload();
+			break; // FIX: was missing break, causing fall-through into Radioactive every time
 		case "Radioactive":
 			self thread Radioactive();
 			break;      
@@ -273,30 +276,26 @@ Radioactive()
 	self endon("disconnect");
 	self endon("death");
 	level endon("nuke");
-	playFxOnTag( level.spawnGlow["enemy"], self, "pelvis" ); 
+	// Cache once \u2014 getDvar() inside the inner foreach would cost ~120 native calls/sec.
+	isTeamGame = (getDvar("g_gametype") == "gungame_team");
+	playFxOnTag( level.spawnGlow["enemy"], self, "pelvis" );
 	playFxOnTag( level.spawnGlow["friendly"], self, "j_head" );
-	//self SetPlayerIgnoreRadiusDamage( true );
 	while(1)
 	{
 		wait .1;
-		//self RadiusDamage(self.origin,120,50,40,self,"MOD_Explosive","nuke_mp");
-		//RadiusDamage(self.origin, 50, 30, 20, self );
 		foreach(player in level.players)
 		{
 			if(player == self)
 				continue;
-			if(getDvar("g_gametype") == "gungame_team")
-			{
-				if(player.team == self.team)
-					continue;
-			} 
+			if(isTeamGame && player.team == self.team)
+				continue;
 			if(Distance(player.origin,self.origin) < 120 && isAlive(player))
 			{
 				player thread maps\mp\gametypes\_damage::finishPlayerDamageWrapper( self, self, 4, 0, "MOD_EXPLOSIVE", "none", player.origin, player.origin, "none", 0, 0 );
 				self thread maps\mp\gametypes\_damagefeedback::updateDamageFeedback("");
 			}
-		}		
-	}	
+		}
+	}
 }
 Suicidebomber()
 {
@@ -337,9 +336,7 @@ Jetpack()
 	self iPrintlnBold("^3Press ^1F ^7to use ^:Jetpack!");
     self.jetpack = 80;
     self maps\mp\perks\_perks::givePerk("specialty_falldamage");
-	self.fx = [];
-    self.fx[0] = loadfx ("smoke/smoke_trail_white_heli");
-    self.fx[1] = loadfx( "misc/flares_cobra" );     
+	// Use pre-cached FX handles from loadStreaks() — loadfx() must not be called at runtime.
     JETPACKBACK = createPrimaryProgressBar( -275 );
     JETPACKBACK.bar.x = 40;
     JETPACKBACK.x = 100;
@@ -358,12 +355,10 @@ Jetpack()
     {
         if(self usebuttonpressed() && self.jetpack>0)
         {
-            //self playsound("veh_ac130_sonic_boom");
-            //self playsound("veh_mig29_sonic_boom");
 			self playsound("cobra_helicopter_dying_loop");
             self setstance("crouch");
-            playfx(self.fx[0],self gettagorigin("j_spine4"));
-			playfx(self.fx[1],self gettagorigin("j_spine4"));
+            playfx(level._effect["jetpack_smoke"],self gettagorigin("j_spine4"));
+			playfx(level._effect["jetpack_flare"],self gettagorigin("j_spine4"));
             earthquake(.15,.2,self gettagorigin("j_spine4"),50);
             self.jetpack--;
             if(self getvelocity()[2]<300)
@@ -425,8 +420,12 @@ DeleteIMS(ims)
 
 DeleteIMS2(ims)
 {
-    level waittill("fuckemp");
-	ims delete();
+    // FIX: The original waited on "fuckemp" which was never notified anywhere —
+    // this created a permanent zombie thread holding the ims entity reference.
+    // Now we wait for nuke (end of match) and clean up the entity then.
+    level waittill("nuke");
+    if(isDefined(ims))
+	    ims delete();
 }
 
 DeleteIt(block, block2, block3, block4)
@@ -647,8 +646,11 @@ Juggernaut()
 {
 	level endon("nuke");
 	self.isJugger = true;
-	self.maxhealth = 400;
-	self.health = self.maxhealth; 
+	// FIX: Use the custom health system (actual_maxhealth/actual_health) instead of
+	// the raw engine maxhealth. Setting engine maxhealth directly broke the HUD display
+	// and regen logic. We double the effective HP pool through the custom system.
+	self.actual_maxhealth = self.maxhp * 5; // 5× base HP (e.g. 300 in Fungame vs normal 60)
+	self.actual_health = self.actual_maxhealth;
 	self setMoveSpeedScale(.7);
 
 	juggIcon = newHudElem();
@@ -673,6 +675,7 @@ destroyJuggOnNuke(juggIcon)
 }
 NoReload()
 {
+	level endon("nuke"); // FIX: was missing — thread survived past match end
 	self endon("death");
 	self endon("disconnect");
 	while(true)
