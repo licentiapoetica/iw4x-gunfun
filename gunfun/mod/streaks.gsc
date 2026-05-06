@@ -519,35 +519,16 @@ setClassTime(class)
 
 Wh()
 {
-	// cheat invert vision, marks near enemies
 	self endon("death");
 	self endon("disconnect");
-	self notifyOnPlayerCommand("3","+actionslot 3");
-	hud = self createText("Press [{+actionslot 3}] to use recon vision", 1.5, "CENTER", "BOTTOM", 0,-80,"default");
-	hud.glowcolor = (0,.7,0);
-	self thread destroyGhostHud(hud);
-	while(true)
-	{
-		self waittill("3");
-		self visionSetNakedForplayer("cheat_invert", 2);
-		hud.label = &"Countdown: ";
-		self.recon = true;
-		self thread scanPlayer();
-		for(i = 10;i > 0;i--)
-		{
-			hud setValue(i);
-			wait 1;
-		}
-		self visionSetNakedForplayer(getDvar("mapname"), 2);
-		self.recon = false;
-		hud fadeOverTime(1);
-		hud.alpha = 0;
-		wait 20;
-		hud.label = &"";
-		hud setText("Press [{+actionslot 3}]  to use recon vision");
-		hud fadeOverTime(1);
-		hud.alpha = 1;
-	}
+    
+    self thermalVisionFOFOverlayOn();
+    self iPrintlnBold("^1X-Ray Vision Active!");
+    
+    wait 30;
+    
+    self thermalVisionFOFOverlayOff();
+    self iPrintlnBold("^1X-Ray Vision Expired");
 }
 
 destroyGhostHud(hud)
