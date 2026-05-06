@@ -235,11 +235,9 @@ giveStreak(streak)
             self.speed = true;
             wait 1;
             self maps\mp\perks\_perks::givePerk("specialty_lightweight");
-            self maps\mp\perks\_perks::givePerk("specialty_lightweight");
             self setMoveSpeedScale(1.6);
             self.setMoveSpeedScale = 1.6;
-            //self thread spawnFireLoop();
-            break;   
+            break;
         case "Riotshield":
             self AttachShieldModel( "weapon_riot_shield_mp", "tag_shield_back" );
             break; 
@@ -278,30 +276,26 @@ Radioactive()
 	self endon("disconnect");
 	self endon("death");
 	level endon("nuke");
-	playFxOnTag( level.spawnGlow["enemy"], self, "pelvis" ); 
+	// Cache once \u2014 getDvar() inside the inner foreach would cost ~120 native calls/sec.
+	isTeamGame = (getDvar("g_gametype") == "gungame_team");
+	playFxOnTag( level.spawnGlow["enemy"], self, "pelvis" );
 	playFxOnTag( level.spawnGlow["friendly"], self, "j_head" );
-	//self SetPlayerIgnoreRadiusDamage( true );
 	while(1)
 	{
 		wait .1;
-		//self RadiusDamage(self.origin,120,50,40,self,"MOD_Explosive","nuke_mp");
-		//RadiusDamage(self.origin, 50, 30, 20, self );
 		foreach(player in level.players)
 		{
 			if(player == self)
 				continue;
-			if(getDvar("g_gametype") == "gungame_team")
-			{
-				if(player.team == self.team)
-					continue;
-			} 
+			if(isTeamGame && player.team == self.team)
+				continue;
 			if(Distance(player.origin,self.origin) < 120 && isAlive(player))
 			{
 				player thread maps\mp\gametypes\_damage::finishPlayerDamageWrapper( self, self, 4, 0, "MOD_EXPLOSIVE", "none", player.origin, player.origin, "none", 0, 0 );
 				self thread maps\mp\gametypes\_damagefeedback::updateDamageFeedback("");
 			}
-		}		
-	}	
+		}
+	}
 }
 Suicidebomber()
 {
@@ -655,7 +649,7 @@ Juggernaut()
 	// FIX: Use the custom health system (actual_maxhealth/actual_health) instead of
 	// the raw engine maxhealth. Setting engine maxhealth directly broke the HUD display
 	// and regen logic. We double the effective HP pool through the custom system.
-	self.actual_maxhealth = self.maxhp * 2;
+	self.actual_maxhealth = self.maxhp * 5; // 5× base HP (e.g. 300 in Fungame vs normal 60)
 	self.actual_health = self.actual_maxhealth;
 	self setMoveSpeedScale(.7);
 
