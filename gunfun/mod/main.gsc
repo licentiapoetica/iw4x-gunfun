@@ -90,7 +90,7 @@ initializeGametype(type) // called in vote.gsc after first map
             setDvar("speed", 1.5);
             setDvar("streaks_online", 1);
             setDvar("jump_height", 0.5);
-            setDvar("amount_weapons", 10); // if 0 uses whole list of possible guns, if set > 0 uses amount larger than 0
+            setDvar("amount_weapons", 0); // if 0 uses whole list of possible guns, if set > 0 uses amount larger than 0
             setDvar("gun_kills", 1);
             break;    
         default: // not required
