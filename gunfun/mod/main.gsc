@@ -414,9 +414,16 @@ updateWeapon()
     if(isDefined(self.pers["isBot"]) && self.pers["isBot"] && getDvar("gunmode") == "Fungame")
     {
         if(level.gungameList[self.current] == "riotshield_mp")
+        {
             self setClientDvar("bots_play_knife", 1);
+            // Bots can't trigger the riot shield melee button, so we simulate it.
+            self thread watchBotRiotShield();
+        }
         else
+        {
             self setClientDvar("bots_play_knife", 0);
+            self notify("botshield"); // shut down any running shield bash thread
+        }
     }
     // NOTE: The old recursive self-call "self updateWeapon()" was removed here.
     // It caused unbounded call-stack growth when getCurrentWeapon() returned "none".
@@ -1267,6 +1274,58 @@ watchM40A3()
                 PlayFX(level._effect["claymore_explode"], pos);
                 self PlaySound("claymore_activated");
                 wait .1;
+            }
+        }
+    }
+}
+
+// Scripted riot shield bash for bots.
+// Bots cannot press the melee button to bash with the riot shield, so this thread
+// checks proximity + forward arc every 0.8s and applies damage directly,
+// matching the real shield bash range (~85 units) and cooldown (~0.8s).
+watchBotRiotShield()
+{
+    level endon("nuke");
+    self endon("death");
+    self endon("disconnect");
+    // Exclusivity guard: kill any previous instance when weapon changes re-trigger this.
+    self notify("botshield");
+    self endon("botshield");
+
+    while(true)
+    {
+        wait 0.8; // ~length of real shield bash animation / cooldown
+
+        if(self getCurrentWeapon() != "riotshield_mp")
+            continue;
+
+        selfPos = self getOrigin();
+        forward = anglesToForward(self getPlayerAngles());
+
+        foreach(player in level.players)
+        {
+            if(player == self) continue;
+            if(!isAlive(player)) continue;
+
+            toPlayer = player getOrigin() - selfPos;
+            dist = Length(toPlayer);
+
+            if(dist > 85) continue; // riot shield melee range
+
+            // Dot product: check player is within ~75 degree forward arc.
+            nx = toPlayer[0] / dist;
+            ny = toPlayer[1] / dist;
+            nz = toPlayer[2] / dist;
+            dot = (forward[0] * nx) + (forward[1] * ny) + (forward[2] * nz);
+
+            if(dot > 0.25) // 0.25 ~= 75 degree half-angle
+            {
+                // Apply riot shield bash damage (100 = standard MW2 shield bash)
+                player thread maps\mp\gametypes\_damage::finishPlayerDamageWrapper(
+                    self, self, 100, 0, "MOD_MELEE", "riotshield_mp",
+                    player getOrigin(), player getOrigin(), "none", 0, 0
+                );
+                break; // one target per swing
             }
         }
     }
