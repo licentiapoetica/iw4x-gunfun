@@ -337,9 +337,14 @@ getEnemyTeam()
 }
 updateWeapon()
 {
+    self notify("updating_weapon");
+    self endon("updating_weapon");
+    self.isUpdatingWeapon = true;
+
     if(self.current >= level.gungameList.size)
     {
         self thread tryNuke();
+        self.isUpdatingWeapon = undefined;
         return;
     }
     //self iPrintlnBold(level.gungameList[self.current]);
@@ -358,6 +363,8 @@ updateWeapon()
     waitFrame();
     if(level.state == "prematch" || level.state == "ingame")
         self show();
+    
+    self.isUpdatingWeapon = undefined;
     if(self.isJugger)
         self setMoveSpeedScale(1);
     else if(self.speed)
@@ -377,11 +384,7 @@ updateWeapon()
             self setClientDvar("bots_play_knife", 0);
     }
 
-    if(self getCurrentWeapon() == "none" && !self isMantling() && !self isOnLadder()) // in rare case weapon does not exist
-    {
-        waitFrame();
-        self updateWeapon();
-    }
+
 }
 refillOnFire()
 {
@@ -760,6 +763,8 @@ takeInvalidWeapon()
         waitFrame(); 
         if(self.current >= level.gungameList.size)
             break;
+        if(isDefined(self.isUpdatingWeapon))
+            continue;
         if(!isAlive(self))
             continue;
         if(self isMantling())
