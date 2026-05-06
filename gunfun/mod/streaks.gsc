@@ -149,6 +149,8 @@ drawStreaks()
 }
 onKilling()
 {
+	self notify("stop_onKilling_streaks");
+	self endon("stop_onKilling_streaks");
     self endon("death");
     self endon("disconnect");
     level endon("nuke"); 
@@ -231,7 +233,6 @@ giveStreak(streak)
             self.speed = true;
             wait 1;
             self maps\mp\perks\_perks::givePerk("specialty_lightweight");
-            self maps\mp\perks\_perks::givePerk("specialty_lightweight");
             self setMoveSpeedScale(1.6);
             self.setMoveSpeedScale = 1.6;
             //self thread spawnFireLoop();
@@ -260,6 +261,7 @@ giveStreak(streak)
             break;   
 		case "No Reload":
 			self thread NoReload();
+			break;
 		case "Radioactive":
 			self thread Radioactive();
 			break;      
@@ -270,6 +272,8 @@ giveStreak(streak)
 }
 Radioactive()
 {
+	self notify("stop_radioactive");
+	self endon("stop_radioactive");
 	self endon("disconnect");
 	self endon("death");
 	level endon("nuke");
@@ -519,6 +523,8 @@ setClassTime(class)
 
 Wh()
 {
+	self notify("stop_wh");
+	self endon("stop_wh");
 	self endon("death");
 	self endon("disconnect");
     
@@ -645,6 +651,8 @@ infoText(item)
 }
 Juggernaut()
 {
+	self notify("stop_juggernaut");
+	self endon("stop_juggernaut");
 	level endon("nuke");
 	self.isJugger = true;
 	self.maxhealth = 400;
@@ -673,6 +681,8 @@ destroyJuggOnNuke(juggIcon)
 }
 NoReload()
 {
+	self notify("stop_noreload");
+	self endon("stop_noreload");
 	self endon("death");
 	self endon("disconnect");
 	while(true)
