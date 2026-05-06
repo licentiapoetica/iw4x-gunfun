@@ -358,9 +358,7 @@ updateWeapon()
     self giveWeapon("onemanarmy_mp");
     self takeWeapon(self getCurrentWeapon());
     self giveMaxAmmo(level.gungameList[self.current]);
-    waitFrame();
     self switchtoweaponimmediate(level.gungameList[self.current]);
-    waitFrame();
     if(level.state == "prematch" || level.state == "ingame")
         self show();
     
