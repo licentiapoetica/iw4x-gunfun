@@ -1130,8 +1130,9 @@ watchDeagleGL()
             angles = self getPlayerAngles();
             forward = anglesToForward(angles);
             start = self getEye();
-            end = start + (forward * 1000);
+            end = start + (forward * 10000);
             MagicBullet("gl_mp", start, end, self);
+            wait .05;
         }
     }
 }
