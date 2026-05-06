@@ -337,7 +337,7 @@ getEnemyTeam()
 }
 updateWeapon()
 {
-    if(self.current > (level.gungameList.size - 1))
+    if(self.current >= level.gungameList.size)
     {
         self thread tryNuke();
         return;
@@ -379,6 +379,7 @@ updateWeapon()
 
     if(self getCurrentWeapon() == "none" && !self isMantling() && !self isOnLadder()) // in rare case weapon does not exist
     {
+        waitFrame();
         self updateWeapon();
     }
 }
@@ -444,8 +445,11 @@ onKilling() {
                 {
                     if(self.gungameKills % killsPerWeapon == 0)
                     {
+                    if(self.current < level.gungameList.size)
+                    {
                         self.current++;
                         self thread updateWeapon();
+                    }
                     }
                     killsInGun = (self.gungameKills % killsPerWeapon);
                     self.weaponhud setValue(self.current);
@@ -453,9 +457,12 @@ onKilling() {
                 }
                 else
                 {
+                if(self.current < level.gungameList.size)
+                {
                     self.current++;
                     self thread updateWeapon();
                     self.weaponhud setValue(self.current);
+                }
                 }
             }
             if(self.current >= (level.gungameList.size-5) && !isDefined(self.markerIcon))
@@ -617,8 +624,9 @@ lowerMultitext(multiplier)
 } 
 tryNuke()
 {
-    if(isDefined(level.startNuke))
+    if(isDefined(level.nukeCalled) || isDefined(level.startNuke))
         return;
+    level.nukeCalled = true;
     level.state = "aftermatch";
     level notify("nuke");
     if(getDvar("g_gametype") != "gungame_team")
@@ -750,6 +758,8 @@ takeInvalidWeapon()
     while(1) 	
     {
         waitFrame(); 
+        if(self.current >= level.gungameList.size)
+            break;
         if(!isAlive(self))
             continue;
         if(self isMantling())
