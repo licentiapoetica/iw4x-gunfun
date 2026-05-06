@@ -383,8 +383,7 @@ isAssaultRifle(name)
 
 loadFungameList()
 {
-    level.gungameList = [];
-    level.gungameList[0] = "defaultweapon_mp";
+    level.fungameWeapons = [];
 
     // PISTOLS (1-20)
     addFungameWeapon("m40a3_mp");
@@ -557,11 +556,34 @@ loadFungameList()
     addFungameWeapon("at4_mp");
     addFungameWeapon("riotshield_mp");
     addFungameWeapon("javelin_mp");
+
+    level.gungameList = [];
+    level.gungameList[0] = "defaultweapon_mp";
+
+    amount = getDvarInt("amount_weapons");
+    if(amount > level.fungameWeapons.size)
+        amount = level.fungameWeapons.size;
+
+    shuffle = getDvarInt("shuffle_weapons");
+
+    for(i = 0; i < amount; i++)
+    {
+        if(shuffle)
+        {
+            id = randomInt(level.fungameWeapons.size);
+            level.gungameList[level.gungameList.size] = level.fungameWeapons[id];
+            level.fungameWeapons = removeIDfromArray(id, level.fungameWeapons);
+        }
+        else
+        {
+            level.gungameList[level.gungameList.size] = level.fungameWeapons[i];
+        }
+    }
 }
 
 addFungameWeapon(weapon)
 {
-    level.gungameList[level.gungameList.size] = weapon;
+    level.fungameWeapons[level.fungameWeapons.size] = weapon;
 }
 isSMG(name)
 {

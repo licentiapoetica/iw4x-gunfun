@@ -597,23 +597,54 @@ killGungameHUD()
 	foreach(player in level.players)
 	{
 		for(i=2;i<6;i++) 
-	   		player.multitext[i] destroy();
+		{
+	   		if(isDefined(player.multitext[i]))
+				player.multitext[i] destroy();
+		}
+
 		if(isdefined(player.scoretext))
 			player.scoretext destroy();
 		if(isdefined(player.scoretext_amount))
 			player.scoretext_amount destroy();
 		if(isdefined(player.weaponhud))
 			player.weaponhud destroy();
+		if(isdefined(player.weapontotalhud))
+			player.weapontotalhud destroy();
+		if(isdefined(player.killhud))
+			player.killhud destroy();
+		if(isdefined(player.killtotalhud))
+			player.killtotalhud destroy();
 		if(isdefined(player.ratiohud))
 			player.ratiohud destroy();
 		if(isDefined(player.streakText))
 			player.streakText destroy();	
-		foreach(icon in player.streakIcons)
+		
+		if(isDefined(player.streakIcons))
 		{
-			if(isDefined(icon))
-				icon destroy();
+			foreach(icon in player.streakIcons)
+			{
+				if(isDefined(icon))
+					icon destroy();
+			}
 		}
-		player.line destroy();	   
+
+		if(isDefined(player.markerIconsEnemies))
+		{
+			foreach(icon in player.markerIconsEnemies)
+			{
+				if(isDefined(icon))
+					icon destroy();
+			}
+		}
+
+		if(isDefined(player.healthHUD))
+			player.healthHUD destroy();
+
+		if(isDefined(player.versionText))
+			player.versionText destroy();
+
+		if(isDefined(player.line))
+			player.line destroy();	   
 	}
 }
 

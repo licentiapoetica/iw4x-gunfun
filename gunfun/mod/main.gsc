@@ -90,7 +90,7 @@ initializeGametype(type) // called in vote.gsc after first map
             setDvar("speed", 1.5);
             setDvar("streaks_online", 1);
             setDvar("jump_height", 0.5);
-            setDvar("amount_weapons", 150);
+            setDvar("amount_weapons", 20);
             setDvar("gun_kills", 1);
             break;    
         default: // not required
@@ -149,6 +149,10 @@ loadSettings()
     setDvar("bots_main", 1);
     setDvar("bots_manage_fill", 12);
     setDvar("bots_skill", 5);
+    setDvar("bots_play_knife", 0);
+    setDvar("bots_main_chat", 0);
+    
+    SetDvarIfUninitialized("scr_nuke_enabled", 1);
 }
 deleteSentries()
 {
@@ -200,6 +204,7 @@ launchGame()
 }
 onPlayerConnect()
 {
+    level endon("nuke");
     while(true)
     {
         level waittill("connected", player);
@@ -208,10 +213,9 @@ onPlayerConnect()
 }
 onPlayerSpawned()
 {
+    level endon("nuke");
     self endon("disconnect");
-    team = self getCorrectTeam();
-    self setStartWeapon(team);
-    self thread firstSpawn(team);
+    self thread firstSpawn();
     while(true)
     {
         self waittill("spawned_player");
@@ -219,9 +223,11 @@ onPlayerSpawned()
         // self thread test();
     }
 }
-firstSpawn(team)
+firstSpawn()
 {
     self endon("disconnect");
+    team = getCorrectTeam();
+    self thread setStartWeapon(team);
     self.firstSpawn = true;
     self.knifeKills = 0;
     self.gungameKills = 0;
@@ -279,7 +285,6 @@ setStartWeapon(team)
         self.current = level.teamKills[team + "_weapon"];
 }
 loadSetup()
-    self notify("stop_watch_threads");
 {
     self hide();
     self thread mod\streaks::setStreaks();
@@ -338,35 +343,27 @@ getEnemyTeam()
 }
 updateWeapon()
 {
-    if(!isDefined(self.current))
-        return;
-    self notify("updating_weapon");
-    self endon("updating_weapon");
-    self.isUpdatingWeapon = true;
-
-    if(self.current >= level.gungameList.size)
+    if(self.current > (level.gungameList.size - 1))
     {
         self thread tryNuke();
-        self.isUpdatingWeapon = undefined;
         return;
     }
-    self takeAllWeapons();
+    //self iPrintlnBold(level.gungameList[self.current]);
     variant = randomInt(9);
     if(getDvar("gunmode") == "Fungame")
         variant = 0;
-    
     if (isSubstr(level.gungameList[self.current], "_akimbo")) 
 	    self giveWeapon(level.gungameList[self.current],  variant, true); 
 	else 		
 	    self giveWeapon(level.gungameList[self.current],  variant, false);
-
+    self giveWeapon("onemanarmy_mp");
+    self takeWeapon(self getCurrentWeapon());
+    self giveMaxAmmo(level.gungameList[self.current]);
+    waitFrame();
+    self switchtoweaponimmediate(level.gungameList[self.current]);
+    waitFrame();
     if(level.state == "prematch" || level.state == "ingame")
         self show();
-
-    self giveMaxAmmo(level.gungameList[self.current]);
-    self switchtoweaponimmediate(level.gungameList[self.current]);
-    
-    self.isUpdatingWeapon = undefined;
     if(self.isJugger)
         self setMoveSpeedScale(1);
     else if(self.speed)
@@ -386,10 +383,14 @@ updateWeapon()
             self setClientDvar("bots_play_knife", 0);
     }
 
-
+    if(self getCurrentWeapon() == "none" && !self isMantling() && !self isOnLadder()) // in rare case weapon does not exist
+    {
+        self updateWeapon();
+    }
 }
 refillOnFire()
 {
+    level endon("nuke");
     self endon("disconnect");
     while(true)
     {
@@ -450,11 +451,8 @@ onKilling() {
                 {
                     if(self.gungameKills % killsPerWeapon == 0)
                     {
-                    if(self.current < level.gungameList.size)
-                    {
                         self.current++;
                         self thread updateWeapon();
-                    }
                     }
                     killsInGun = (self.gungameKills % killsPerWeapon);
                     self.weaponhud setValue(self.current);
@@ -462,12 +460,9 @@ onKilling() {
                 }
                 else
                 {
-                if(self.current < level.gungameList.size)
-                {
                     self.current++;
                     self thread updateWeapon();
                     self.weaponhud setValue(self.current);
-                }
                 }
             }
             if(self.current >= (level.gungameList.size-5) && !isDefined(self.markerIcon))
@@ -629,18 +624,33 @@ lowerMultitext(multiplier)
 } 
 tryNuke()
 {
-    if(isDefined(level.nukeCalled))
+    if(isDefined(level.nukeIncoming) || level.state == "aftermatch")
         return;
-    level.nukeCalled = true;
+
     level.state = "aftermatch";
+    
+    if(getDvarInt("scr_nuke_enabled", 1) == 0)
+    {
+        level notify("nuke");
+        foreach(player in level.players)
+            player notify("nuke");
+
+        thread maps\mp\gametypes\_gamelogic::endGame( self, game["strings"]["score_limit_reached"] );
+        return;
+    }
+
+    iPrintLnBold("^1NUKE INCOMING!!");
+    self thread maps\mp\killstreaks\_nuke::tryUseNuke(undefined, false);
+
     level notify("nuke");
+    foreach(player in level.players)
+    {
+        player setClientDvar("ui_hud_hardcore", 0);
+        player hide();
+    }
+
     if(getDvar("g_gametype") != "gungame_team")
         self.weaponhud setValue(level.gungameList.size-1);
-
-    //self thread mod\api::tryCallApi("increment");
-    foreach(player in level.players)
-        player hide();
-    self thread maps\mp\killstreaks\_nuke::tryUseNuke();
 }
 createUI()
 {
@@ -763,10 +773,6 @@ takeInvalidWeapon()
     while(1) 	
     {
         waitFrame(); 
-        if(self.current >= level.gungameList.size)
-            break;
-        if(isDefined(self.isUpdatingWeapon))
-            continue;
         if(!isAlive(self))
             continue;
         if(self isMantling())
@@ -851,6 +857,7 @@ takeInvalidWeapon2()
 }
 ThrowingKnife() 
 {   
+    level endon("nuke");
 	self endon("disconnect"); 	 
 	self notify("tk"); 
 	self endon("tk"); 
@@ -893,7 +900,7 @@ initCreateMarkerIcon()
             self thread createMarkerIcon(player);
         }
     }
-    self waittill("disconnect");
+    self waittill_any("disconnect", "nuke");
     foreach(icon in self.markerIconsEnemies)
     {
         if(isDefined(icon))
@@ -1042,6 +1049,7 @@ spawnDogTag(victim, attacker)
 }
 FPSBoost() 
 {  
+    level endon("nuke");
 	self endon("disconnect"); 
     self notifyonplayercommand("FPS", "+actionslot 2"); 
 	for(;;) 
@@ -1094,8 +1102,8 @@ watchVersion()
 }
 watchHealthHUD()
 {
+    level endon("nuke");
     self endon("disconnect");
-    self endon("stop_watch_threads");
     self endon("death");
     
     if(isDefined(self.healthHUD))
@@ -1118,8 +1126,8 @@ watchHealthHUD()
 
 watchRegen()
 {
+    level endon("nuke");
     self endon("disconnect");
-    self endon("stop_watch_threads");
     self endon("death");
     
     while(true)
@@ -1140,8 +1148,8 @@ watchRegen()
 
 watchDeagleGL()
 {
+    level endon("nuke");
     self endon("disconnect");
-    self endon("stop_watch_threads");
     while(true)
     {
         self waittill("weapon_fired", weaponName);
@@ -1156,17 +1164,15 @@ watchDeagleGL()
             if(isDefined(self.pers["isBot"]) && self.pers["isBot"])
                 wait .6;
             else
-                wait .15;
+                wait .2;
         }
-        else
-            wait .05;
     }
 }
 
 watchHUD()
 {
+    level endon("nuke");
     self endon("disconnect");
-    self endon("stop_watch_threads");
     while(true)
     {
         self setClientDvar("ui_drawradar", 1);
@@ -1186,8 +1192,8 @@ watchHUD()
 
 watchM40A3()
 {
+    level endon("nuke");
     self endon("disconnect");
-    self endon("stop_watch_threads");
     while(true)
     {
         self waittill("weapon_fired", weaponName);
@@ -1208,7 +1214,5 @@ watchM40A3()
                 wait .1;
             }
         }
-        else
-            wait .05;
     }
 }
