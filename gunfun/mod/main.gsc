@@ -628,7 +628,7 @@ lowerMultitext(multiplier)
 } 
 tryNuke()
 {
-    if(isDefined(level.nukeCalled) || isDefined(level.startNuke))
+    if(isDefined(level.nukeCalled))
         return;
     level.nukeCalled = true;
     level.state = "aftermatch";
