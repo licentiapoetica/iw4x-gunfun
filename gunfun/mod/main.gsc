@@ -147,7 +147,7 @@ loadSettings()
     
     // Bot Management
     setDvar("bots_main", 1);
-    setDvar("bots_manage_fill", 18);
+    setDvar("bots_manage_fill", 12);
     setDvar("bots_skill", 7);
 }
 deleteSentries()
