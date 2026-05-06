@@ -19,6 +19,10 @@ loadStreaks()
     precacheShader("cardicon_cod4");
 	precacheShader("cardicon_loadedfinger");
 
+    // Pre-cache Jetpack FX at level init (loadfx must NOT be called at runtime).
+    level._effect["jetpack_smoke"] = loadfx("smoke/smoke_trail_white_heli");
+    level._effect["jetpack_flare"] = loadfx("misc/flares_cobra");
+
     level.streaks3 = [];
     level.streaks6 = [];
     level.streaks9 = [];
@@ -260,6 +264,7 @@ giveStreak(streak)
             break;   
 		case "No Reload":
 			self thread NoReload();
+			break; // FIX: was missing break, causing fall-through into Radioactive every time
 		case "Radioactive":
 			self thread Radioactive();
 			break;      
@@ -337,9 +342,7 @@ Jetpack()
 	self iPrintlnBold("^3Press ^1F ^7to use ^:Jetpack!");
     self.jetpack = 80;
     self maps\mp\perks\_perks::givePerk("specialty_falldamage");
-	self.fx = [];
-    self.fx[0] = loadfx ("smoke/smoke_trail_white_heli");
-    self.fx[1] = loadfx( "misc/flares_cobra" );     
+	// Use pre-cached FX handles from loadStreaks() — loadfx() must not be called at runtime.
     JETPACKBACK = createPrimaryProgressBar( -275 );
     JETPACKBACK.bar.x = 40;
     JETPACKBACK.x = 100;
@@ -358,12 +361,10 @@ Jetpack()
     {
         if(self usebuttonpressed() && self.jetpack>0)
         {
-            //self playsound("veh_ac130_sonic_boom");
-            //self playsound("veh_mig29_sonic_boom");
 			self playsound("cobra_helicopter_dying_loop");
             self setstance("crouch");
-            playfx(self.fx[0],self gettagorigin("j_spine4"));
-			playfx(self.fx[1],self gettagorigin("j_spine4"));
+            playfx(level._effect["jetpack_smoke"],self gettagorigin("j_spine4"));
+			playfx(level._effect["jetpack_flare"],self gettagorigin("j_spine4"));
             earthquake(.15,.2,self gettagorigin("j_spine4"),50);
             self.jetpack--;
             if(self getvelocity()[2]<300)
@@ -425,8 +426,12 @@ DeleteIMS(ims)
 
 DeleteIMS2(ims)
 {
-    level waittill("fuckemp");
-	ims delete();
+    // FIX: The original waited on "fuckemp" which was never notified anywhere —
+    // this created a permanent zombie thread holding the ims entity reference.
+    // Now we wait for nuke (end of match) and clean up the entity then.
+    level waittill("nuke");
+    if(isDefined(ims))
+	    ims delete();
 }
 
 DeleteIt(block, block2, block3, block4)
@@ -647,8 +652,11 @@ Juggernaut()
 {
 	level endon("nuke");
 	self.isJugger = true;
-	self.maxhealth = 400;
-	self.health = self.maxhealth; 
+	// FIX: Use the custom health system (actual_maxhealth/actual_health) instead of
+	// the raw engine maxhealth. Setting engine maxhealth directly broke the HUD display
+	// and regen logic. We double the effective HP pool through the custom system.
+	self.actual_maxhealth = self.maxhp * 2;
+	self.actual_health = self.actual_maxhealth;
 	self setMoveSpeedScale(.7);
 
 	juggIcon = newHudElem();
@@ -673,6 +681,7 @@ destroyJuggOnNuke(juggIcon)
 }
 NoReload()
 {
+	level endon("nuke"); // FIX: was missing — thread survived past match end
 	self endon("death");
 	self endon("disconnect");
 	while(true)

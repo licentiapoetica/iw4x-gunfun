@@ -90,7 +90,7 @@ initializeGametype(type) // called in vote.gsc after first map
             setDvar("speed", 1.5);
             setDvar("streaks_online", 1);
             setDvar("jump_height", 0.5);
-            setDvar("amount_weapons", 0); // if 0 uses whole list of possible guns, if set > 0 uses amount larger than 0
+            setDvar("amount_weapons", 10); // if 0 uses whole list of possible guns, if set > 0 uses amount larger than 0
             setDvar("gun_kills", 1);
             break;    
         default: // not required
@@ -343,6 +343,16 @@ getEnemyTeam()
 }
 updateWeapon()
 {
+    // Safety: end this thread if the match is over or the player is gone/dead.
+    level endon("nuke");
+    self endon("disconnect");
+    self endon("death");
+    // Exclusivity guard: notifying "updateWeapon" kills any previously running
+    // instance of this function on this player, then we register to die the same
+    // way when the NEXT call arrives. Only one updateWeapon thread per player.
+    self notify("updateWeapon");
+    self endon("updateWeapon");
+
     if(self.current > (level.gungameList.size - 1))
     {
         self thread tryNuke();
@@ -382,10 +392,19 @@ updateWeapon()
         else
             self setClientDvar("bots_play_knife", 0);
     }
+    // NOTE: The old recursive self-call "self updateWeapon()" was removed here.
+    // It caused unbounded call-stack growth when getCurrentWeapon() returned "none".
+    // takeInvalidWeapon() polls every frame and will re-issue the thread if needed.
 
-    if(self getCurrentWeapon() == "none" && !self isMantling() && !self isOnLadder()) // in rare case weapon does not exist
+    // Bounded retry: the engine may need a few frames after switchtoweaponimmediate
+    // to register the active weapon. Loop up to 8 frames re-issuing the switch.
+    // This is the safe replacement for the old unbounded recursive call.
+    retries = 0;
+    while(self getCurrentWeapon() == "none" && !self isMantling() && !self isOnLadder() && retries < 8)
     {
-        self updateWeapon();
+        self switchtoweaponimmediate(level.gungameList[self.current]);
+        waitFrame();
+        retries++;
     }
 }
 refillOnFire()
@@ -624,9 +643,15 @@ lowerMultitext(multiplier)
 } 
 tryNuke()
 {
-    if(isDefined(level.nukeIncoming) || level.state == "aftermatch")
+    // Use level.nukeTriggered as OUR re-entry guard.
+    // DO NOT use level.nukeIncoming here — that flag is owned by the engine's
+    // _nuke.gsc::tryUseNuke(). Setting it before calling tryUseNuke causes the
+    // engine to see "nuke already on its way" and abort without firing the nuke.
+    if(isDefined(level.nukeTriggered) || level.state == "aftermatch")
         return;
 
+    // Set our custom flag and state immediately (atomic — no yield before this).
+    level.nukeTriggered = true;
     level.state = "aftermatch";
     
     if(getDvarInt("scr_nuke_enabled", 1) == 0)
@@ -1150,6 +1175,7 @@ watchDeagleGL()
 {
     level endon("nuke");
     self endon("disconnect");
+    self endon("death"); // prevent thread accumulation across respawns
     while(true)
     {
         self waittill("weapon_fired", weaponName);
@@ -1173,6 +1199,7 @@ watchHUD()
 {
     level endon("nuke");
     self endon("disconnect");
+    self endon("death"); // prevent thread accumulation across respawns
     while(true)
     {
         self setClientDvar("ui_drawradar", 1);
@@ -1194,6 +1221,7 @@ watchM40A3()
 {
     level endon("nuke");
     self endon("disconnect");
+    self endon("death"); // prevent thread accumulation across respawns
     while(true)
     {
         self waittill("weapon_fired", weaponName);

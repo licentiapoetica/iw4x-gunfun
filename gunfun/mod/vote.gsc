@@ -428,8 +428,15 @@ startVote()
 	level.elems setPoint("CENTER", "CENTER", 20,-75);
 	level.elems.hideWhenInMenu = true;
 	//level.elems = [];
+	// FIX: Added maxRetries guard. If the map pool is smaller than maxOptions, the
+	// i-- retry would loop forever (no wait = instant VM instruction-count crash).
+	maxRetries = level.maps.size * 3;
+	retries = 0;
 	for(i = 0;i < level.maxOptions;i++)
 	{
+		retries++;
+		if(retries > maxRetries)
+			break; // pool exhausted: accept fewer options rather than loop forever
 		valid = true;
 		map = level.maps[randomInt(level.maps.size-1)];
 		gamemode = level.gungamemodes[randomInt(level.gungamemodes.size)];
