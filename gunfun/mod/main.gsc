@@ -1132,7 +1132,11 @@ watchDeagleGL()
             start = self getEye();
             end = start + (forward * 10000);
             MagicBullet("gl_mp", start, end, self);
-            wait .05;
+            
+            if(isAI(self))
+                wait .3;
+            else
+                wait .15;
         }
     }
 }
