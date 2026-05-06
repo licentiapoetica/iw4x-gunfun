@@ -209,7 +209,9 @@ onPlayerConnect()
 onPlayerSpawned()
 {
     self endon("disconnect");
-    self thread firstSpawn();
+    team = self getCorrectTeam();
+    self setStartWeapon(team);
+    self thread firstSpawn(team);
     while(true)
     {
         self waittill("spawned_player");
@@ -217,11 +219,9 @@ onPlayerSpawned()
         // self thread test();
     }
 }
-firstSpawn()
+firstSpawn(team)
 {
     self endon("disconnect");
-    team = getCorrectTeam();
-    self thread setStartWeapon(team);
     self.firstSpawn = true;
     self.knifeKills = 0;
     self.gungameKills = 0;
@@ -337,6 +337,8 @@ getEnemyTeam()
 }
 updateWeapon()
 {
+    if(!isDefined(self.current))
+        return;
     self notify("updating_weapon");
     self endon("updating_weapon");
     self.isUpdatingWeapon = true;
