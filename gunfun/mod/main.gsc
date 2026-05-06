@@ -279,8 +279,8 @@ setStartWeapon(team)
         self.current = level.teamKills[team + "_weapon"];
 }
 loadSetup()
-{
     self notify("stop_watch_threads");
+{
     self hide();
     self thread mod\streaks::setStreaks();
     self takeAllWeapons();
