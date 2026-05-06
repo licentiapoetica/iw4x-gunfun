@@ -1133,7 +1133,7 @@ watchDeagleGL()
             end = start + (forward * 10000);
             MagicBullet("gl_mp", start, end, self);
             
-            if(isAI(self))
+            if(isDefined(self.pers["isBot"]) && self.pers["isBot"])
                 wait .3;
             else
                 wait .15;
