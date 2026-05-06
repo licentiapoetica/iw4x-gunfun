@@ -464,7 +464,6 @@ loadFungameList()
     addFungameWeapon("mp5k_rof_mp");
     addFungameWeapon("uzi_mp");
     addFungameWeapon("uzi_silencer_mp");
-    addFungameWeapon("deserteagle_akimbo_mp");
     addFungameWeapon("uzi_reflex_mp");
     addFungameWeapon("uzi_akimbo_mp");
     addFungameWeapon("uzi_rof_mp");
@@ -493,7 +492,6 @@ loadFungameList()
     wait .05;
     // ASSAULT RIFLES (91-120)
     addFungameWeapon("m4_mp");
-    addFungameWeapon("deserteagle_akimbo_mp");
     addFungameWeapon("m4_silencer_mp");
     addFungameWeapon("m4_reflex_mp");
     addFungameWeapon("m4_acog_mp");
