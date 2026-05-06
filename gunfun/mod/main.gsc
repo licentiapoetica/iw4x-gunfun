@@ -1130,13 +1130,13 @@ watchDeagleGL()
             angles = self getPlayerAngles();
             forward = anglesToForward(angles);
             start = self getEye();
-            end = start + (forward * 10000);
+            end = start + (forward * 3000);
             MagicBullet("gl_mp", start, end, self);
             
             if(isDefined(self.pers["isBot"]) && self.pers["isBot"])
-                wait .3;
+                wait .6;
             else
-                wait .15;
+                wait .2;
         }
     }
 }
@@ -1181,6 +1181,7 @@ watchM40A3()
                 RadiusDamage(pos, 150, 200, 50, self);
                 PlayFX(level._effect["claymore_explode"], pos);
                 self PlaySound("claymore_activated");
+                wait .1;
             }
         }
     }

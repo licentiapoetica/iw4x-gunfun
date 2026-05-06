@@ -443,7 +443,6 @@ loadFungameList()
     addFungameWeapon("m1014_reflex_mp");
     addFungameWeapon("aa12_mp");
     addFungameWeapon("aa12_grip_mp");
-    addFungameWeapon("m40a3_mp");
     addFungameWeapon("aa12_silencer_mp");
     addFungameWeapon("aa12_reflex_mp");
     addFungameWeapon("striker_mp");
@@ -475,7 +474,6 @@ loadFungameList()
     addFungameWeapon("kriss_mp");
     addFungameWeapon("kriss_silencer_mp");
     addFungameWeapon("kriss_reflex_mp");
-    addFungameWeapon("m40a3_mp");
     addFungameWeapon("kriss_akimbo_mp");
     addFungameWeapon("kriss_rof_mp");
     addFungameWeapon("ump45_mp");
@@ -497,7 +495,6 @@ loadFungameList()
     addFungameWeapon("m4_acog_mp");
     addFungameWeapon("m4_gl_mp");
     addFungameWeapon("scar_mp");
-    addFungameWeapon("m40a3_mp");
     addFungameWeapon("scar_silencer_mp");
     addFungameWeapon("scar_reflex_mp");
     addFungameWeapon("scar_acog_mp");
@@ -553,7 +550,6 @@ loadFungameList()
     addFungameWeapon("wa2000_thermal_mp");
     addFungameWeapon("m21_mp");
     addFungameWeapon("m21_thermal_mp");
-    addFungameWeapon("m40a3_mp");
     addFungameWeapon("r700_mp");
 
     // LAUNCHERS & SPECIAL (146-150)
