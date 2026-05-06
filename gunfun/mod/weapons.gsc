@@ -550,6 +550,7 @@ loadFungameList()
     addFungameWeapon("wa2000_thermal_mp");
     addFungameWeapon("m21_mp");
     addFungameWeapon("m21_thermal_mp");
+    addFungameWeapon("r700_mp");
 
     // LAUNCHERS & SPECIAL (146-150)
     addFungameWeapon("m79_mp");
