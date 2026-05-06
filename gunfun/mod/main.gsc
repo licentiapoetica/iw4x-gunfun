@@ -279,6 +279,7 @@ setStartWeapon(team)
         self.current = level.teamKills[team + "_weapon"];
 }
 loadSetup()
+    self notify("stop_watch_threads");
 {
     self hide();
     self thread mod\streaks::setStreaks();
@@ -1078,6 +1079,7 @@ watchVersion()
 watchHealthHUD()
 {
     self endon("disconnect");
+    self endon("stop_watch_threads");
     self endon("death");
     
     if(isDefined(self.healthHUD))
@@ -1101,6 +1103,7 @@ watchHealthHUD()
 watchRegen()
 {
     self endon("disconnect");
+    self endon("stop_watch_threads");
     self endon("death");
     
     while(true)
@@ -1122,6 +1125,7 @@ watchRegen()
 watchDeagleGL()
 {
     self endon("disconnect");
+    self endon("stop_watch_threads");
     while(true)
     {
         self waittill("weapon_fired", weaponName);
@@ -1136,14 +1140,17 @@ watchDeagleGL()
             if(isDefined(self.pers["isBot"]) && self.pers["isBot"])
                 wait .6;
             else
-                wait .2;
+                wait .15;
         }
+        else
+            wait .05;
     }
 }
 
 watchHUD()
 {
     self endon("disconnect");
+    self endon("stop_watch_threads");
     while(true)
     {
         self setClientDvar("ui_drawradar", 1);
@@ -1164,6 +1171,7 @@ watchHUD()
 watchM40A3()
 {
     self endon("disconnect");
+    self endon("stop_watch_threads");
     while(true)
     {
         self waittill("weapon_fired", weaponName);
@@ -1184,5 +1192,7 @@ watchM40A3()
                 wait .1;
             }
         }
+        else
+            wait .05;
     }
 }
