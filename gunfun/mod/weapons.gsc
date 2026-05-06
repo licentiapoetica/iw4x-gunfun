@@ -561,7 +561,7 @@ loadFungameList()
     level.gungameList[0] = "defaultweapon_mp";
 
     amount = getDvarInt("amount_weapons");
-    if(amount > level.fungameWeapons.size)
+    if(amount <= 0 || amount > level.fungameWeapons.size)
         amount = level.fungameWeapons.size;
 
     shuffle = getDvarInt("shuffle_weapons");
