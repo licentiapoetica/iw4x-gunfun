@@ -115,7 +115,7 @@ loadSettings()
     setDvar("shuffle_weapons", 0);
     setDvar("intermission", 15);
     SetDvarIfUninitialized("show_damage_ui", 1);
-    setDvar("gunversion", "1.4 Remaster by ^1Santahunter - Modified by God of Hellfire");
+    setDvar("gunversion", "1.5 Remaster by ^1Santahunter - Modified by God of Hellfire");
     /////////////////////////////////////////////////////////////////////
     setDvar("scr_" + (getDvar("g_gametype")) + "_timelimit", 0); 	
 	setDvar("scr_" + (getDvar("g_gametype")) + "_scorelimit", 0); 
@@ -148,7 +148,7 @@ loadSettings()
     // Bot Management
     setDvar("bots_main", 1);
     setDvar("bots_manage_fill", 12);
-    setDvar("bots_skill", 7);
+    setDvar("bots_skill", 5);
 }
 deleteSentries()
 {
