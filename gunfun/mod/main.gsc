@@ -347,20 +347,21 @@ updateWeapon()
         self.isUpdatingWeapon = undefined;
         return;
     }
-    //self iPrintlnBold(level.gungameList[self.current]);
+    self takeAllWeapons();
     variant = randomInt(9);
     if(getDvar("gunmode") == "Fungame")
         variant = 0;
+    
     if (isSubstr(level.gungameList[self.current], "_akimbo")) 
 	    self giveWeapon(level.gungameList[self.current],  variant, true); 
 	else 		
 	    self giveWeapon(level.gungameList[self.current],  variant, false);
-    self giveWeapon("onemanarmy_mp");
-    self takeWeapon(self getCurrentWeapon());
-    self giveMaxAmmo(level.gungameList[self.current]);
-    self switchtoweaponimmediate(level.gungameList[self.current]);
+
     if(level.state == "prematch" || level.state == "ingame")
         self show();
+
+    self giveMaxAmmo(level.gungameList[self.current]);
+    self switchtoweaponimmediate(level.gungameList[self.current]);
     
     self.isUpdatingWeapon = undefined;
     if(self.isJugger)
