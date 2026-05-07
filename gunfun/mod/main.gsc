@@ -272,7 +272,12 @@ firstSpawn()
     self notify("menuresponse", game["menu_team"], team);
 	wait .1;   
 	self notify("menuresponse", "changeclass", "class1");	 	
-    wait .1;    
+    wait .1;
+    // Re-apply perks here — the engine's class-load triggered by changeclass above
+    // can wipe perk state before loadSetup() gets a chance to set them on first spawn.
+    self maps\mp\perks\_perks::givePerk("specialty_fastreload"); // Sleight of Hand
+    self maps\mp\perks\_perks::givePerk("specialty_falldamage");
+    self maps\mp\perks\_perks::givePerk("specialty_quickdraw");
     self.firstSpawn = false;
     self thread tryCreateMarkerIcons();
 }
