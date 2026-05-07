@@ -120,6 +120,7 @@ loadSettings()
     setDvar("scr_" + (getDvar("g_gametype")) + "_timelimit", 0); 	
 	setDvar("scr_" + (getDvar("g_gametype")) + "_scorelimit", 0); 
 	setDvar("ui_allow_teamchange", 0); 
+    setDvar("scr_game_allowkillcam", 0);
     setDvar("testClients_watchKillcam", 0); 	
 	setDvar("scr_game_hardpoints", 0); 	
 	setDvar("scr_game_graceperiod", 0); 	
@@ -257,6 +258,7 @@ firstSpawn()
     self setClientDvar("bg_shock_lookControl", 0);
     self setClientDvar("ui_drawradar", 0);
     self setClientDvar("cg_drawTeamScores", 0);
+    self setClientDvar("scr_game_allowkillcam", 0);
 	self.hud_damagefeedback.color = (1,0,0); 
     self.line = self createRectangle("CENTER", "LEFT", 0,-90,300,5,(1,1,0),"line_horizontal",1);
     self thread onKilling();

@@ -518,6 +518,16 @@ loadFungameList()
     addFungameWeapon("famas_reflex_mp");
     addFungameWeapon("famas_acog_mp");
     addFungameWeapon("famas_fmj_mp");
+    addFungameWeapon("fal_mp");
+    addFungameWeapon("fal_silencer_mp");
+    addFungameWeapon("fal_reflex_mp");
+    addFungameWeapon("fal_acog_mp");
+    addFungameWeapon("fal_gl_mp");
+    addFungameWeapon("m16_mp");
+    addFungameWeapon("m16_silencer_mp");
+    addFungameWeapon("m16_reflex_mp");
+    addFungameWeapon("m16_acog_mp");
+    addFungameWeapon("m16_gl_mp");
     addFungameWeapon("ak47classic_mp");
 
     wait .05;

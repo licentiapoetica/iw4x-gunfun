@@ -71,6 +71,7 @@ onStartGameType()
 	setObjectiveHintText( "allies", "Each several kills of your team, your weapon ranks up! \n \n Mod made by ^:Santahunter^7!" );
 	setObjectiveHintText( "axis", "Each several kills of your team, your weapon ranks up! \n \n Mod made by ^:Santahunter^7!" );
 
+	level.killcam = false;
 	level.spawnMins = ( 0, 0, 0 );
 	level.spawnMaxs = ( 0, 0, 0 );	
 	maps\mp\gametypes\_spawnlogic::placeSpawnPoints( "mp_tdm_spawn_allies_start" );
