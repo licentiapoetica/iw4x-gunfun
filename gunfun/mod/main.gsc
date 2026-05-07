@@ -846,10 +846,14 @@ takeInvalidWeapon()
     self endon("death");
     level endon("nuke");
     counter = 0;
-    waitFrame(); // was: wait 3 — removed so mid-game joiners get their weapon immediately
+    // Skip the first 5 frames so the initial updateWeapon() from loadSetup() has
+    // time to complete its switchtoweaponimmediate before we start polling.
+    // This prevents a false-positive correction that was causing the 2.5s delay.
+    for(i = 0; i < 5; i++)
+        waitFrame();
     while(1)
     {
-        wait 0.1; // was waitFrame() (~60/s) — 10/s is ample for a safety-net poller
+        wait 0.1; // 10/s is ample for a safety-net poller
         if(!isAlive(self))
             continue;
         if(self isMantling())
@@ -868,7 +872,9 @@ takeInvalidWeapon()
         {
             self takeAllWeapons();
             self thread updateWeapon();
-            wait 2.5;
+            // Short cooldown — just enough for switchtoweaponimmediate to settle.
+            // The old 2.5s wait was causing the visible mid-game-join delay.
+            wait 0.5;
         }
     }
 }
