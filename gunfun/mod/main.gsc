@@ -256,8 +256,6 @@ firstSpawn()
     self setClientDvar("bg_shock_lookControl_mousesensitivityscale", 1);
     self setClientDvar("bg_shock_movement", 0);
     self setClientDvar("bg_shock_lookControl", 0);
-    self setClientDvar("ui_drawradar", 0);
-    self setClientDvar("cg_drawTeamScores", 0);
     self setClientDvar("scr_game_allowkillcam", 0);
 	self.hud_damagefeedback.color = (1,0,0); 
     self.line = self createRectangle("CENTER", "LEFT", 0,-90,300,5,(1,1,0),"line_horizontal",1);
@@ -327,19 +325,16 @@ loadSetup()
     self maps\mp\perks\_perks::givePerk("specialty_fastreload"); // due to icys request :)
     self maps\mp\perks\_perks::givePerk("specialty_falldamage"); // due to icys request :)
     self maps\mp\perks\_perks::givePerk("specialty_quickdraw");
-    // Static HUD dvars set once per spawn — moved from watchHUD's 1-second polling loop.
-    // These values never change mid-game so there is no need to re-apply them every second.
-    self setClientDvar("cg_drawRadar", 1);
+    // Static HUD dvars set once per spawn.
+    // g_hardcore=1 handles minimap/radar/teamscore suppression at engine level.
+    // We only need to override what we want TO show (ammo, custom health HUD).
     self setClientDvar("cg_drawStance", 0);
-    self setClientDvar("cg_drawTeamScores", 0);
     self setClientDvar("cg_drawKillfeed", 0);
     self setClientDvar("cg_drawBreathHint", 0);
     self setClientDvar("cg_drawMantleHint", 0);
     self setClientDvar("cg_drawTurretCrosshair", 0);
     self setClientDvar("cg_cursorHints", 0);
-    // Keep g_hardcore=1 for server-side gameplay rules but show the normal client HUD
-    // so our custom health/weapon overlays render correctly without fighting hardcore suppression.
-    self setClientDvar("ui_hud_hardcore", 0);
+    self setClientDvar("ui_hud_hardcore", 0);     // show custom HUD elements despite g_hardcore
     self thread takeInvalidWeapon();
     if(level.state ==  "prematch")
     {
@@ -714,7 +709,6 @@ tryNuke()
     level notify("nuke");
     foreach(player in level.players)
     {
-        player setClientDvar("ui_hud_hardcore", 0);
         player hide();
     }
 
@@ -1052,7 +1046,8 @@ createRectangle(align, relative, x, y, width, height, color, shader, sort)
 	hud.HideWhenInMenu = true;
 	hud setPoint(align,relative,x,y);
 	return hud;
-}  
+}
+
 upgradeTeamUI(team)
 {
 	fontElem = newTeamHudElem( team );
@@ -1262,9 +1257,7 @@ watchHUD()
     self endon("death"); // prevent thread accumulation across respawns
     while(true)
     {
-        // Only re-apply dvars the engine may reset mid-game (radar via UAV, ammo via class events).
-        // ui_hud_hardcore is set to 0 once per spawn in loadSetup() and does not need refreshing.
-        self setClientDvar("ui_drawradar", 1);
+        // Re-apply ammo visibility (engine may reset it on class/weapon events).
         self setClientDvar("cg_drawAmmo", 1);
         wait 5;
     }
