@@ -60,39 +60,39 @@ loadVote()
 maps()
 {
 	level.maps = [];
-	
+	// MW2 Base Maps
 	level.maps[level.maps.size] = "mp_rust";
 	level.maps[level.maps.size] = "mp_afghan";
 	level.maps[level.maps.size] = "mp_terminal";
 	level.maps[level.maps.size] = "mp_highrise";
-	level.maps[level.maps.size] = "mp_derail";
+	//level.maps[level.maps.size] = "mp_derail"; //fuck derail
 	level.maps[level.maps.size] = "mp_rundown";
-	level.maps[level.maps.size] = "mp_brecourt";
-	level.maps[level.maps.size] = "mp_boneyard";
+	level.maps[level.maps.size] = "mp_brecourt"; //Wasteland
+	level.maps[level.maps.size] = "mp_boneyard"; //Scrapyard
 	level.maps[level.maps.size] = "mp_quarry";
-	level.maps[level.maps.size] = "mp_nightshift";
+	level.maps[level.maps.size] = "mp_nightshift"; //Skidrow
 	level.maps[level.maps.size] = "mp_estate";
 	level.maps[level.maps.size] = "mp_invasion";
-	level.maps[level.maps.size] = "mp_checkpoint";
+	level.maps[level.maps.size] = "mp_checkpoint"; //Karachi
 	level.maps[level.maps.size] = "mp_subbase";
 	level.maps[level.maps.size] = "mp_favela";
 	level.maps[level.maps.size] = "mp_underpass";
-	level.maps[level.maps.size] = "iw4_credits";
+	//level.maps[level.maps.size] = "iw4_credits"; // no
 	
+	// MW2 DLC Maps
+	level.maps[level.maps.size] = "mp_complex"; //Bailout Stimulus DLC
+	level.maps[level.maps.size] = "mp_crash"; //Crash
+	level.maps[level.maps.size] = "mp_overgrown"; //Overgrown
+	level.maps[level.maps.size] = "mp_compact"; //Salvage Stimulus DLC
+	level.maps[level.maps.size] = "mp_storm"; //Storm
 	
-	level.maps[level.maps.size] = "mp_complex";
-	level.maps[level.maps.size] = "mp_crash";
-	level.maps[level.maps.size] = "mp_overgrown";
-	level.maps[level.maps.size] = "mp_compact";
-	level.maps[level.maps.size] = "mp_storm";
+	level.maps[level.maps.size] = "mp_abandon"; //Carnival
+	//level.maps[level.maps.size] = "mp_fuel2"; // hell no
+	level.maps[level.maps.size] = "mp_strike"; //Strike
+	level.maps[level.maps.size] = "mp_trailerpark"; //Trailerpark
+	level.maps[level.maps.size] = "mp_vacant"; //Vacant
 	
-	level.maps[level.maps.size] = "mp_abandon";
-	level.maps[level.maps.size] = "mp_fuel2";
-	level.maps[level.maps.size] = "mp_strike";
-	level.maps[level.maps.size] = "mp_trailerpark";
-	level.maps[level.maps.size] = "mp_vacant";
-	
-	level.maps[level.maps.size] = "mp_nuked";
+	level.maps[level.maps.size] = "mp_nuked"; //Nuketown
 	
 	level.maps[level.maps.size] = "mp_cross_fire";
 	level.maps[level.maps.size] = "mp_bloc";
@@ -126,7 +126,7 @@ maps()
 	//level.maps[level.maps.size] = "so_forest_contingency";
 	//level.maps[level.maps.size] = "dcburning";
 	//level.maps[level.maps.size] = "dcemp";
-	level.maps[level.maps.size] = "estate";
+	//level.maps[level.maps.size] = "estate";
 	//level.maps[level.maps.size] = "favela";
 	//level.maps[level.maps.size] = "so_showers_gulag";
 	level.maps[level.maps.size] = "oilrig";
