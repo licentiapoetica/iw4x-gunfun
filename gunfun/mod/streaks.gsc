@@ -236,7 +236,7 @@ giveStreak(streak)
             wait 1;
             self maps\mp\perks\_perks::givePerk("specialty_lightweight");
             self setMoveSpeedScale(1.6);
-            self.setMoveSpeedScale = 1.6;
+            self.moveSpeedScaler = 1.6; // keep cached baseline in sync (was: self.setMoveSpeedScale = 1.6 — typo, set entity field not call function)
             break;
         case "Riotshield":
             self AttachShieldModel( "weapon_riot_shield_mp", "tag_shield_back" );
@@ -648,10 +648,11 @@ Juggernaut()
 	self.isJugger = true;
 	// FIX: Use the custom health system (actual_maxhealth/actual_health) instead of
 	// the raw engine maxhealth. Setting engine maxhealth directly broke the HUD display
-	// and regen logic. We double the effective HP pool through the custom system.
+	// and regen logic. We multiply the effective HP pool through the custom system.
 	self.actual_maxhealth = self.maxhp * 5; // 5× base HP (e.g. 300 in Fungame vs normal 60)
 	self.actual_health = self.actual_maxhealth;
-	self setMoveSpeedScale(.7);
+	// Speed floor is the mode base (1.5 in Fungame) — no slowdown penalty.
+	// Juggernaut's balance trade-off is the 5× HP pool only.
 
 	juggIcon = newHudElem();
 	juggIcon.x = self.origin[0];

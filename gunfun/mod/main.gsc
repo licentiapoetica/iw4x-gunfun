@@ -208,7 +208,9 @@ launchGame()
     {
         player enableWeapons();
         player visionSetNakedForPlayer(getDvar("mapname"), 2);
-        player setMoveSpeedScale(1.25);
+        // Use the mode-configured speed dvar, not a hardcoded value.
+        // Fungame = 1.5, Classic = 1.2, etc. — 1.25 was always wrong for Fungame.
+        player setMoveSpeedScale(getDvarFloat("speed"));
     }
        
     setDvar("jump_height", 60);
@@ -395,15 +397,22 @@ updateWeapon()
     self giveWeapon("onemanarmy_mp");
     self takeWeapon(self getCurrentWeapon());
     self giveMaxAmmo(level.gungameList[self.current]);
+    self setWeaponAmmoClip(level.gungameList[self.current], 9999); // force full clip — giveMaxAmmo only fills stock/reserve
     waitFrame();
     self switchtoweaponimmediate(level.gungameList[self.current]);
     waitFrame();
+    self setWeaponAmmoClip(level.gungameList[self.current], 9999); // re-apply after switch to prevent forced reload
     if(level.state == "prematch" || level.state == "ingame")
         self show();
-    if(self.isJugger)
-        self setMoveSpeedScale(1);
-    else if(self.speed)
-         self setMoveSpeedScale(1.6);
+    // Always restore the correct speed, clamped to the mode's configured base floor.
+    // getBaseSpeed() ensures no path can silently drop below the dvar-configured minimum.
+    if(level.state != "prematch")
+    {
+        if(self.speed)
+            self setMoveSpeedScale(1.6); // Speed streak: above base, always fine
+        else
+            self setMoveSpeedScale(getBaseSpeed()); // Juggernaut and normal: always >= base speed
+    }
     if(level.state ==  "prematch")
     {
         self setMoveSpeedScale(0);
@@ -822,13 +831,21 @@ floatToString(float)
         string = getSubStr(string, 0, 5);  
     return StringToFloat(string);
 } 
+// Returns the mode-configured base speed, clamped so nothing can go below it.
+// All setMoveSpeedScale calls for non-prematch state should go through this
+// (or compare against it) to honour the 1.5 Fungame / 1.2 Classic floor contract.
+getBaseSpeed()
+{
+    base = getDvarFloat("speed");
+    return base;
+} 
 takeInvalidWeapon()
 {
     self endon("disconnect");
     self endon("death");
     level endon("nuke");
     counter = 0;
-    wait 3;
+    waitFrame(); // was: wait 3 — removed so mid-game joiners get their weapon immediately
     while(1)
     {
         wait 0.1; // was waitFrame() (~60/s) — 10/s is ample for a safety-net poller
@@ -1320,11 +1337,22 @@ watchBotRiotShield()
 
             if(dot > 0.25) // 0.25 ~= 75 degree half-angle
             {
-                // Apply riot shield bash damage (100 = standard MW2 shield bash)
-                player thread maps\mp\gametypes\_damage::finishPlayerDamageWrapper(
-                    self, self, 100, 0, "MOD_MELEE", "riotshield_mp",
-                    player getOrigin(), player getOrigin(), "none", 0, 0
-                );
+                // The mod pins engine health at 1000 and tracks real HP in actual_health.
+                // finishPlayerDamageWrapper only hits engine health (which never changes),
+                // so we apply damage directly to the scripted HP instead.
+                bashDamage = 100;
+                player.actual_health -= bashDamage;
+                player notify("takeDamage"); // reset regen timer
+
+                if(player.actual_health <= 0)
+                {
+                    player.actual_health = 0;
+                    // Drive a lethal hit through the engine so the kill is attributed correctly.
+                    player thread maps\mp\gametypes\_damage::finishPlayerDamageWrapper(
+                        self, self, 1000, 0, "MOD_MELEE", "riotshield_mp",
+                        player getOrigin(), player getOrigin(), "none", 0, 0
+                    );
+                }
                 break; // one target per swing
             }
         }
