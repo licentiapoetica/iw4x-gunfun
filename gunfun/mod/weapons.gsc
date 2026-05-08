@@ -46,6 +46,7 @@ loadWeapons()
         // pistols
         weaponList[weaponList.size] = "usp_mp";
         weaponList[weaponList.size] = "deserteagle_mp";
+        weaponList[weaponList.size] = "deserteagle_akimbo_mp"; // GL deagle
         weaponList[weaponList.size] = "coltanaconda_mp";
         weaponList[weaponList.size] = "beretta_mp";
         // semi auto pistols
@@ -118,7 +119,7 @@ loadWeapons()
         // Only remove specific weapons if we still have enough unique ones left
         if(weaponList.size > 5) 
         {
-            if(weaponList[id] == "m79_mp" || weaponList[id] == "at4_mp" || weaponList[id] == "rpg_mp" || weaponList[id] == "riotshield_mp" || weaponList[id] == "dragunov_mp" || weaponList[id] == "m40a3_mp" || weaponList[id] == "peacekeeper_mp")
+            if(weaponList[id] == "m79_mp" || weaponList[id] == "at4_mp" || weaponList[id] == "rpg_mp" || weaponList[id] == "riotshield_mp" || weaponList[id] == "dragunov_mp" || weaponList[id] == "m40a3_mp" || weaponList[id] == "peacekeeper_mp" || weaponList[id] == "deserteagle_akimbo_mp")
                 weaponList = removeIDfromArray(id, weaponList);
         }
     }
@@ -137,6 +138,10 @@ removeIDfromArray(id, weaponList)
 }
 setWeapon(name)
 {
+    // If the caller already specified a fully-qualified akimbo weapon (e.g.
+    // "deserteagle_akimbo_mp"), pass it through unchanged — no randomization.
+    if(isSubstr(name, "_akimbo_"))
+        return name;
     name = strTok(name, "_");
     scope = "";
     attachments = "";

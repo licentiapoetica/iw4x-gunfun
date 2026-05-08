@@ -845,7 +845,6 @@ takeInvalidWeapon()
     self endon("disconnect");
     self endon("death");
     level endon("nuke");
-    counter = 0;
     // Skip the first 5 frames so the initial updateWeapon() from loadSetup() has
     // time to complete its switchtoweaponimmediate before we start polling.
     // This prevents a false-positive correction that was causing the 2.5s delay.
@@ -859,15 +858,6 @@ takeInvalidWeapon()
         if(self isMantling())
             continue;
         weapon = self getCurrentWeapon();
-        if(!self hasWeapon(level.gungameList[self.current]))
-        {
-            counter++;
-            if(counter == 2)
-            {
-                counter = 0;
-                level.gungameList[self.current] = mod\weapons::setWeapon("peacekeeper_mp");
-            }
-        }
         if(weapon != level.gungameList[self.current])
         {
             self takeAllWeapons();
