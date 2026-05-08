@@ -259,6 +259,12 @@ firstSpawn()
     self setClientDvar("scr_game_allowkillcam", 0);
 	self.hud_damagefeedback.color = (1,0,0); 
     self.line = self createRectangle("CENTER", "LEFT", 0,-90,300,5,(1,1,0),"line_horizontal",1);
+    // Subtle crosshair dot — light blue, low alpha
+    self.crosshair = self createRectangle("CENTER", "CENTER", 0, 0, 3, 3, (0.5, 0.85, 1.0), "white", 1);
+    self.crosshair.alpha = 0.4;
+    self.crosshair.hideWhenInMenu = true;
+    self thread createLeaderHud();
+    self thread watchLeader();
     self thread onKilling();
     self thread createUI();
     self thread refillOnFire();
@@ -362,7 +368,7 @@ upgradeOnTeamKills()
         enemyTeam = self getEnemyTeam();
         self.current = level.teamKills[self.team + "_weapon"];
         self thread updateWeapon();
-        self.weaponhud setText("Weapon: " + self.current + "/" + (level.gungameList.size) + "/^3" + level.teamKills[enemyTeam + "_weapon"]); 	
+        self.weaponhud setText("Gun: " + self.current + "/" + (level.gungameList.size) + "/^3" + level.teamKills[enemyTeam + "_weapon"]); 	
     }
 }
 getEnemyTeam()
@@ -488,14 +494,14 @@ onKilling() {
             if(killsPerWeapon > 1)
             {
                 killsInGun = (self.gungameKills % killsPerWeapon);
-                self.weaponhud setValue(self.current);
+                self.weaponhud setText("Gun: " + self.current + " / " + (level.gungameList.size - 1));
                 self.killhud setValue(killsInGun);
                 self.killhud.alpha = 1;
                 self.killtotalhud.alpha = 1;
             }
             else
             {
-                self.weaponhud setValue(self.current);
+                self.weaponhud setText("Gun: " + self.current + " / " + (level.gungameList.size - 1));
                 self.killhud.alpha = 0;
                 self.killtotalhud.alpha = 0;
             }
@@ -518,14 +524,14 @@ onKilling() {
                         self thread updateWeapon();
                     }
                     killsInGun = (self.gungameKills % killsPerWeapon);
-                    self.weaponhud setValue(self.current);
+                    self.weaponhud setText("Gun: " + self.current + " / " + (level.gungameList.size - 1));
                     self.killhud setValue(killsInGun);
                 }
                 else
                 {
                     self.current++;
                     self thread updateWeapon();
-                    self.weaponhud setValue(self.current);
+                    self.weaponhud setText("Gun: " + self.current + " / " + (level.gungameList.size - 1));
                 }
             }
             if(self.current >= (level.gungameList.size-5) && !isDefined(self.markerIcon))
@@ -718,7 +724,7 @@ tryNuke()
     }
 
     if(getDvar("g_gametype") != "gungame_team")
-        self.weaponhud setValue(level.gungameList.size-1);
+        self.weaponhud setText("Gun: " + (level.gungameList.size-1));
 }
 createUI()
 {
@@ -731,22 +737,16 @@ createUI()
 createWeaponHud()
 {
     self.weaponhud = self createFontString("hudsmall", 1.2);
-    self.weaponhud setPoint("RIGHT", "CENTER", -350, -105); 	
-    self.weaponhud.glowalpha = .5; 
-    self.weaponhud.color = (1,1,0); 
+    self.weaponhud setPoint("LEFT", "LEFT", 10, -105);
+    self.weaponhud.glowalpha = .5;
+    self.weaponhud.color = (1,1,0);
     self.weaponhud.hideWhenInMenu = true;
     self.weaponhud.glowcolor = (1,0,0);
-    self.weaponhud.label = &"Weapon: ";
-    self.weaponhud setValue(self.current);
+    self.weaponhud setText("Gun: " + self.current + " / " + (level.gungameList.size - 1));
 
+    // weapontotalhud kept defined but hidden — total is now inline in weaponhud text
     self.weapontotalhud = self createFontString("hudsmall", 1.2);
-    self.weapontotalhud setPoint("LEFT", "CENTER", -350, -105); 	
-    self.weapontotalhud.glowalpha = .5; 
-    self.weapontotalhud.color = (1,1,0); 
-    self.weapontotalhud.hideWhenInMenu = true;
-    self.weapontotalhud.glowcolor = (1,0,0);
-    self.weapontotalhud.label = &" / ";
-    self.weapontotalhud setValue(level.gungameList.size - 1);
+    self.weapontotalhud.alpha = 0;
 }
 createKillHud()
 {
@@ -783,7 +783,7 @@ createKillHud()
 createRatioHud()
 {
     self.ratiohud = self createFontString("hudsmall", 1); 
-    self.ratiohud setPoint("LEFT", "CENTER", -410, -125); 
+    self.ratiohud setPoint("LEFT", "LEFT", 10, -125);
     self.ratiohud.color = (1,1,0); 	
     self.ratiohud.glowalpha = .3; 
     self.ratiohud.glowcolor = (1,0,0); 
@@ -792,6 +792,47 @@ createRatioHud()
     self waittill_any("death", "killed_lethal");
     self.ratiohud fadeOverTime(2);
     self.ratiohud.alpha = 1;
+}
+createLeaderHud()
+{
+    self endon("disconnect");
+    self.leaderhud = self createFontString("hudsmall", 1.1);
+    self.leaderhud setPoint("TOPLEFT", "TOPLEFT", 10, 10);
+    self.leaderhud.color = (1, 1, 0);
+    self.leaderhud.glowalpha = .4;
+    self.leaderhud.glowcolor = (1, 0.5, 0);
+    self.leaderhud.hideWhenInMenu = true;
+    self.leaderhud setText("Leader: -");
+}
+watchLeader()
+{
+    level endon("nuke");
+    self endon("disconnect");
+    while(true)
+    {
+        wait 1;
+        leader = getLeader();
+        if(isDefined(leader) && isDefined(leader.current))
+            self.leaderhud setText("^3Leader: ^7" + leader.name + " ^5[" + leader.current + "]");
+        else
+            self.leaderhud setText("Leader: -");
+    }
+}
+getLeader()
+{
+    leader = undefined;
+    highLevel = -1;
+    foreach(player in level.players)
+    {
+        if(!isDefined(player.current))
+            continue;
+        if(player.current > highLevel)
+        {
+            highLevel = player.current;
+            leader = player;
+        }
+    }
+    return leader;
 }
 Weaponnumber() // deprecated
 {  
