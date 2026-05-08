@@ -6,24 +6,24 @@
     Nevertheless it uses some codesnippets from the old gungame mod.
 
 
------ Version 1.5 - Fungame Update -------
+----- Version 1.5 - God of Hellfire Update -------
+ - Added Botwarfare to the Mod
+ - Added Fungame mode
+    - 150+ unique weapons progression list
+    - Classic Progression style from Pistol to Javelin
+    - Possibility to set it to 2 kills per gun via configuration
+- Performance Improvements
+    - Removed all Server Console Logs
+    - Optimized mod code
+    - Removed several unused code snippets
+- Bugfixes
+    - Fixed "Configstring Overflow (511)" crash on asset-heavy maps (mp_nightshift)
+    - Fixed Classic mode weapon list population for 300+ weapons
+    - Fixed weapon upgrades not working on first weapon
+    - Fixed several other minor bugs
+    - Removed 2.5 second delay on switching weapons on respawn
+    
 
-- Added "Fungame" mode:
-    -> 150 unique weapons progression list
-    -> Includes new weapons like Peacekeeper, Ripper, and more
-- Weapon Logic Improvements:
-    -> Reduced Riot Shield requirement to 1 kill (Fungame only)
-    -> Fixed Riot Shield kills not counting as progression
-    -> Fixed Javelin win condition (requires 2 kills to finish)
-    -> Corrected internal weapon names (ACR to masada, Thumper to m79)
-- Stability & Optimization:
-    -> Fixed "Configstring Overflow (511)" crash on asset-heavy maps (mp_nightshift)
-    -> Removed console debug flooding causing server timeouts
-    -> Unified game mode configuration in main.gsc
-    -> Fixed Classic mode weapon list population for 300+ weapons
-- Server & Bot Management:
-    -> Fixed bot persistence across map rotations (bots_manage_fill)
-    -> Improved server internet visibility (dedicated 2)
 
 ----- Version 1.4 -------
 
