@@ -132,9 +132,13 @@ loadSettings()
     setDvar("cg_drawDamageFlash", 0);
     setDvar("bg_shock_lookControl_mousesensitivityscale", 1);
     setDvar("bg_shock_movement", 0);
+    setDvar("bg_shock_movement_duration", 0);
+    setDvar("bg_shock_movement_magnitude", 0);
     setDvar("bg_shock_lookControl", 0);
+    setDvar("bg_shock_lookControl_duration", 0);
     setDvar("bg_shock_screenBlurBlendTime", 0);
     setDvar("bg_shock_screenBlurBlendFadeTime", 0);
+    setDvar("player_sprintUnlimited", 1);   // Marathon: unlimited sprint
 
     level.state = "prematch";
     level.markerIcon = "ui_host";
@@ -263,8 +267,7 @@ firstSpawn()
     self.crosshair = self createRectangle("CENTER", "CENTER", 0, 0, 3, 3, (0.5, 0.85, 1.0), "white", 1);
     self.crosshair.alpha = 0.4;
     self.crosshair.hideWhenInMenu = true;
-    self thread createLeaderHud();
-    self thread watchLeader();
+
     self thread onKilling();
     self thread createUI();
     self thread refillOnFire();
@@ -284,6 +287,10 @@ firstSpawn()
     self maps\mp\perks\_perks::givePerk("specialty_fastreload"); // Sleight of Hand
     self maps\mp\perks\_perks::givePerk("specialty_falldamage");
     self maps\mp\perks\_perks::givePerk("specialty_quickdraw");
+    self maps\mp\perks\_perks::givePerk("specialty_lightweight");
+    self maps\mp\perks\_perks::givePerk("specialty_marathon");
+    self maps\mp\perks\_perks::givePerk("specialty_fastmantle");  // Marathon Pro: faster mantle
+    self setPlayerData("challengeState", "ch_marathon_pro", 2);   // unlock Marathon Pro
     self.firstSpawn = false;
     self thread tryCreateMarkerIcons();
 }
@@ -333,9 +340,14 @@ loadSetup()
     self.isJugger = false;
     self.moveSpeedScaler = getDvarFloat("speed"); 
 	self setMoveSpeedScale(getDvarFloat("speed")); 
+    self thread enforceSpeed(); // override any engine speed penalty every frame
     self maps\mp\perks\_perks::givePerk("specialty_fastreload"); // due to icys request :)
     self maps\mp\perks\_perks::givePerk("specialty_falldamage"); // due to icys request :)
     self maps\mp\perks\_perks::givePerk("specialty_quickdraw");
+    self maps\mp\perks\_perks::givePerk("specialty_lightweight");
+    self maps\mp\perks\_perks::givePerk("specialty_marathon");
+    self maps\mp\perks\_perks::givePerk("specialty_fastmantle");  // Marathon Pro: faster mantle
+    self setPlayerData("challengeState", "ch_marathon_pro", 2);   // unlock Marathon Pro
     // Static HUD dvars set once per spawn.
     // g_hardcore=1 handles minimap/radar/teamscore suppression at engine level.
     // We only need to override what we want TO show (ammo, custom health HUD).
@@ -346,6 +358,11 @@ loadSetup()
     self setClientDvar("cg_drawTurretCrosshair", 0);
     self setClientDvar("cg_cursorHints", 0);
     self setClientDvar("ui_hud_hardcore", 0);     // show custom HUD elements despite g_hardcore
+    // Re-apply shock suppression every spawn — engine can reset client dvars on respawn
+    self setClientDvar("bg_shock_movement", 0);
+    self setClientDvar("bg_shock_movement_duration", 0);
+    self setClientDvar("bg_shock_movement_magnitude", 0);
+    self setClientDvar("bg_shock_lookControl", 0);
     self thread takeInvalidWeapon();
     if(level.state ==  "prematch")
     {
@@ -793,47 +810,7 @@ createRatioHud()
     self.ratiohud fadeOverTime(2);
     self.ratiohud.alpha = 1;
 }
-createLeaderHud()
-{
-    self endon("disconnect");
-    self.leaderhud = self createFontString("hudsmall", 1.1);
-    self.leaderhud setPoint("TOPLEFT", "TOPLEFT", 10, 10);
-    self.leaderhud.color = (1, 1, 0);
-    self.leaderhud.glowalpha = .4;
-    self.leaderhud.glowcolor = (1, 0.5, 0);
-    self.leaderhud.hideWhenInMenu = true;
-    self.leaderhud setText("Leader: -");
-}
-watchLeader()
-{
-    level endon("nuke");
-    self endon("disconnect");
-    while(true)
-    {
-        wait 1;
-        leader = getLeader();
-        if(isDefined(leader) && isDefined(leader.current))
-            self.leaderhud setText("^3Leader: ^7" + leader.name + " ^5[" + leader.current + "]");
-        else
-            self.leaderhud setText("Leader: -");
-    }
-}
-getLeader()
-{
-    leader = undefined;
-    highLevel = -1;
-    foreach(player in level.players)
-    {
-        if(!isDefined(player.current))
-            continue;
-        if(player.current > highLevel)
-        {
-            highLevel = player.current;
-            leader = player;
-        }
-    }
-    return leader;
-}
+
 Weaponnumber() // deprecated
 {  
     self notify("weaponnumber"); 	
@@ -881,6 +858,24 @@ getBaseSpeed()
     base = getDvarFloat("speed");
     return base;
 } 
+enforceSpeed()
+{
+    // Calls setMoveSpeedScale every server frame — brute-forces over any engine
+    // speed penalty (bullet pain, bg_shock, mantle exit, etc.) with no gaps.
+    level endon("nuke");
+    self endon("disconnect");
+    self endon("death");
+    while(true)
+    {
+        waitFrame();
+        if(level.state != "ingame")
+            continue;
+        if(self.speed)
+            self setMoveSpeedScale(1.6);
+        else
+            self setMoveSpeedScale(getBaseSpeed());
+    }
+}
 takeInvalidWeapon()
 {
     self endon("disconnect");
