@@ -647,7 +647,10 @@ killGungameHUD()
 			player.versionText destroy();
 
 		if(isDefined(player.line))
-			player.line destroy();	   
+			player.line destroy();
+
+		if(isDefined(player.crosshair))
+			player.crosshair destroy();	   
 	}
 }
 

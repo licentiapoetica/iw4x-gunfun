@@ -321,7 +321,7 @@ Explosive()
 		forward = self getTagOrigin("j_head");
         end = self thread vector_scal(anglestoforward(self getPlayerAngles()),1000000);
         Location = BulletTrace( forward, end, 0, self )[ "position" ];
-		playFx(level.explosionfx, Location); 	
+		playFx(level._effect["claymore_explode"], Location); 	
 		RadiusDamage(Location, 50, 30, 20, self );
 		//self RadiusDamage(Location,250,self.explodmg,self.explomindmg,self,"MOD_Explosive","barrel_mp");
 		wait self.explotime;
@@ -407,6 +407,7 @@ tryUseIMS()
 	block4 Solid();	
 	self thread BombThem(ims);
 	self thread DeleteIt(block, block2, block3, block4);
+	self thread DeleteItOnNuke(block, block2, block3, block4);
 	self thread DeleteIMS(ims);
 	self thread DeleteIMS2(ims);
 	
@@ -432,10 +433,18 @@ DeleteIt(block, block2, block3, block4)
 {
     self waittill_any("disconnect", "Ims_Dead");
 	
-	block delete();
-	block2 delete();
-	block3 delete();
-	block4 delete();
+	if(isDefined(block)) block delete();
+	if(isDefined(block2)) block2 delete();
+	if(isDefined(block3)) block3 delete();
+	if(isDefined(block4)) block4 delete();
+}
+DeleteItOnNuke(block, block2, block3, block4)
+{
+    level waittill("nuke");
+	if(isDefined(block)) block delete();
+	if(isDefined(block2)) block2 delete();
+	if(isDefined(block3)) block3 delete();
+	if(isDefined(block4)) block4 delete();
 }
 BombThem(ims)
 {

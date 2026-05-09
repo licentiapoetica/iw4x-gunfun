@@ -90,7 +90,8 @@ initializeGametype(type) // called in vote.gsc after first map
             setDvar("speed", 1.5);
             setDvar("streaks_online", 1);
             setDvar("jump_height", 70);
-            setDvar("amount_weapons", 0); // if 0 uses whole list of possible guns, if set > 0 uses amount larger than 0
+            setDvar("amount_weapons", 0); // 0 = full 162-weapon progression
+            setDvar("shuffle_weapons", 0); // weapons play in fixed order
             setDvar("gun_kills", 1);
             break;    
         default: // not required
@@ -497,11 +498,17 @@ onKilling() {
     // Cache settings that never change mid-match — eliminates getDvar()/getDvarInt()
     // native calls inside this loop which runs every 0.3s per player.
     killsPerWeapon = getDvarInt("gun_kills", 1);
-	self.scoretext = self createText("hudbig", 1, "CENTER", "CENTER", 0, 0, .7,"");
-	self.scoretext_amount = self createText("hudbig", 1, "CENTER", "CENTER", -10, 20, .7,"");
-	self.multitext = [];
-	for(i=2;i<6;i++)
-	    self.multitext[i] = self createText("hudbig", .6, "CENTER", "CENTER", 50, (i * 20), .7,"");
+	// Guard: only create HUDs if they don't already exist (prevents leak on reconnect)
+	if(!isDefined(self.scoretext))
+		self.scoretext = self createText("hudbig", 1, "CENTER", "CENTER", 0, 0, .7,"");
+	if(!isDefined(self.scoretext_amount))
+		self.scoretext_amount = self createText("hudbig", 1, "CENTER", "CENTER", -10, 20, .7,"");
+	if(!isDefined(self.multitext) || !isDefined(self.multitext[2]))
+	{
+		self.multitext = [];
+		for(i=2;i<6;i++)
+		    self.multitext[i] = self createText("hudbig", .6, "CENTER", "CENTER", 50, (i * 20), .7,"");
+	}
 	while(true)
     {
         wait .3;
@@ -574,6 +581,8 @@ refreshCounter(refreshCounter)
     { 		 
         refreshCounter = 0;
         self.weaponhud destroy(); 	
+        if(isDefined(self.weapontotalhud))
+            self.weapontotalhud destroy();
         self createWeaponHud();	
     }    
 }
