@@ -471,8 +471,9 @@ BombThem(ims)
 Boom(player, expos)
 {
     player playsound ("claymore_activated");
-	level._effect["bombexplosion"] = loadfx("explosions/tanker_explosion");
-	PlayFx( level._effect["bombexplosion"], expos );
+	// FIX: loadfx() must NEVER be called at runtime — only at level init.
+	// Reuse the pre-cached explosion handle from Init().
+	PlayFx( level._effect["claymore_explode"], expos );
 	//RadiusDamage(self.origin,350,500,100,level);
 	MagicBullet("ac130_105mm_mp", expos, expos+(0,-100,-1000), self); 
 	MagicBullet("ac130_105mm_mp", expos, expos+(100,0, -10), self); 

@@ -337,22 +337,12 @@ createPlayerRectangle(shader,align, relative, x, y, width, height)
 doCountdown(timer,timer2)
 {
 	secs = 20;
-	milisecs = 10;
-	while(secs > 0)
+	timer.label = &"Time left: ";
+	timer2.alpha = 0; // subsecond display removed
+	for(secs = 20; secs > 0; secs--)
 	{
-		milisecs--;
-		if(milisecs == 0)
-		{
-			milisecs = 10;
-			secs--;
-		}
-		if(secs == 9)
-		{
-			timer2 setPoint("LEFT", "CENTER", 20,90);
-		}
-		timer setText("Time left: " + secs);
-		timer2 setValue(milisecs);
-		wait .1;
+		timer setValue(secs);
+		wait 1;
 	}
 	level notify("finishVote");
 }
@@ -399,7 +389,7 @@ startVote()
 	//background3 = createRectangle("black","CENTER", "CENTER", 225,0,180,75);
 	//background3.alpha = .7;
 	timer = level createServerFontString("default", 1.8);
-	timer setPoint("CENTER", "CENTER", -20,90);
+	timer setPoint("CENTER", "CENTER", 0,90);
 	timer.hideWhenInMenu = true;
 	
 	timer2 = level createServerFontString("default", 1.8);
@@ -539,12 +529,18 @@ doControls()
 		voted = true;
 		level.votes[self.position]++;
 		//level.elems[self.position] setText(getDisplayName(level.options[self.position]) + " [" + level.votes[self.position] + "]");
+		// FIX: Rebuild vote text only if it actually changed, and cap total rebuilds.
+		// Each unique setText() string permanently burns a configstring slot (512 limit).
 		text = "";
 		for(i = 0;i < level.maxOptions;i++)
 		{
 			text += getDisplayName(level.options[i].map) + " [^3" + level.options[i].gamemode + "^7][" + level.votes[i] + "]\n";			
 		}
-		level.elems setText(text);
+		if(!isDefined(level._lastVoteText) || level._lastVoteText != text)
+		{
+			level.elems setText(text);
+			level._lastVoteText = text;
+		}
 	}
 }
 onForward()

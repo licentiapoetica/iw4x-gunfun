@@ -330,7 +330,7 @@ loadSetup()
 	self.actual_health = self.actual_maxhealth;
     self.maxhealth = 1000;
     self.health = 1000;
-    self thread watchHealthHUD();
+    // watchHealthHUD removed — HP display not wanted
     self thread watchRegen();
     self thread watchDeagleGL();
     self thread watchM40A3();
@@ -385,7 +385,9 @@ upgradeOnTeamKills()
         enemyTeam = self getEnemyTeam();
         self.current = level.teamKills[self.team + "_weapon"];
         self thread updateWeapon();
-        self.weaponhud setText("Gun: " + self.current + "/" + (level.gungameList.size) + "/^3" + level.teamKills[enemyTeam + "_weapon"]); 	
+        // setText() is safe here: bounded to ~N unique strings where N = weapon count.
+        // Configstrings are deduplicated, so all players sharing the same weapon# reuse one slot.
+        self.weaponhud setText("Gun: " + self.current + " / " + (level.gungameList.size) + " / ^3" + level.teamKills[enemyTeam + "_weapon"]); 	
     }
 }
 getEnemyTeam()
@@ -660,7 +662,10 @@ scorepopup(amount)
 	self.scoretext_amount.color = color; 
 	self.scoretext_amount.glowColor = glowColor;
  	self.scoretext_amount SetPulseFX( 40, 2000, 600 );
- 	self.scoretext_amount setText("+" + self.amount); 	
+ 	// FIX: Use .label + setValue() instead of setText("+" + amount).
+ 	// Each unique amount string burned a permanent configstring slot.
+ 	self.scoretext_amount.label = &"+";
+ 	self.scoretext_amount setValue(self.amount); 	
 	if(self.multiplier > 1) 	
 	{ 	
         self.multitext[self.multiplier].alpha = 1;  
@@ -679,11 +684,13 @@ scorepopup(amount)
         self.multitext[self.multiplier] setText("Multi Kill!");		
  	else if(self.multiplier > 4) 	
 	{ 	  
-        color = []; 	
-        for(i = 0;i < 13;i++) 	
-        color[i] = randomInt(9); 	
         difference = self.multiplier - 4; 	
-        self.multitext[5] setText("^3x" + difference + " ^" + color[0] + "K^" + color[1] + "i^" + color[2] + "l^" + color[3] + "l^" + color[4] + "i^" + color[5] + "n^" + color[6] + "g ^" + color[7] + "S^" + color[8] + "p^" + color[9] + "r^" + color[10] + "e^" + color[11] + "e^" + color[12] + "!"); 
+        // FIX: Use a fixed string instead of randomized color codes.
+        // The old rainbow text generated a unique configstring for every kill spree
+        // (random colors = unique string every time = configstring leak).
+        // FIX: Use .label + setValue() to avoid configstring leak per spree level.
+        self.multitext[5].label = &"^1K^2i^3l^4l^5i^6n^7g ^1S^2p^3r^4e^5e ^3x";
+        self.multitext[5] setValue(difference); 
 	}	  
    	self thread lowerMultiplier(); 
 }
@@ -741,7 +748,7 @@ tryNuke()
     }
 
     if(getDvar("g_gametype") != "gungame_team")
-        self.weaponhud setText("Gun: " + (level.gungameList.size-1));
+        self.weaponhud setText("Gun: " + (level.gungameList.size - 1));
 }
 createUI()
 {
@@ -759,9 +766,10 @@ createWeaponHud()
     self.weaponhud.color = (1,1,0);
     self.weaponhud.hideWhenInMenu = true;
     self.weaponhud.glowcolor = (1,0,0);
+    // setText() is safe here: max ~162 unique strings, configstrings are deduplicated.
     self.weaponhud setText("Gun: " + self.current + " / " + (level.gungameList.size - 1));
 
-    // weapontotalhud kept defined but hidden — total is now inline in weaponhud text
+    // weapontotalhud kept defined but hidden — total is inline in weaponhud text
     self.weapontotalhud = self createFontString("hudsmall", 1.2);
     self.weapontotalhud.alpha = 0;
 }
