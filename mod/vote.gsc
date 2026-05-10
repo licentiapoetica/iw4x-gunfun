@@ -296,11 +296,9 @@ getDisplayName(map)
 createRectangle(shader,align, relative, x, y, width, height)
 {
 	hud = newHudElem();
-	hud.sTexType = "bar";
+	hud.elemType = "icon";
 	hud.width = width;
 	hud.height = height;
-	hud.align = align;
-	hud.relative = relative;
 	hud.alpha = 1;
 	hud.xOffset = 0;
 	hud.yOffset = 0;
@@ -316,11 +314,9 @@ createRectangle(shader,align, relative, x, y, width, height)
 createPlayerRectangle(shader,align, relative, x, y, width, height)
 {
 	hud = newClientHudElem(self);
-	hud.sTexType = "bar";
+	hud.elemType = "icon";
 	hud.width = width;
 	hud.height = height;
-	hud.align = align;
-	hud.relative = relative;
 	hud.alpha = 1;
 	hud.xOffset = 0;
 	hud.yOffset = 0;

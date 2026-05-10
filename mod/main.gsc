@@ -166,6 +166,9 @@ loadSettings()
     setDvar("bots_main_chat", 0);
     
     SetDvarIfUninitialized("scr_nuke_enabled", 1);
+    // Map voting: set to 1 to show custom vote screen at end of game,
+    // 0 to use the normal leaderboard + server map rotation instead.
+    SetDvarIfUninitialized("vote_enabled", 0);
     // Cache mode flags as level vars — avoids repeated getDvar() in hot per-player loops.
     level.isTeamGame = (getDvar("g_gametype") == "gungame_team");
     level.isKillConfirmed = (getDvar("gunmode") == "Kill Confirmed");
@@ -182,6 +185,10 @@ deleteSentries()
 }
 launchGame()
 {
+    // Wait for gametype to initialize _hud_util globals (level.fontHeight, level.uiParent).
+    // launchGame runs from Init() which fires before the gametype callback.
+    while(!isDefined(level.fontHeight) || !isDefined(level.uiParent))
+        waitFrame();
     hud = createServerFontString("hudbig", 1);
     hud setPoint("CENTER", "CENTER", 0,-80);
     hud.color = (1,1,0);
@@ -253,6 +260,7 @@ firstSpawn()
     self.firstSpawn = true;
     self.knifeKills = 0;
     self.gungameKills = 0;
+    self.isJugger = false;
     self.streaks = [];
     self setClientDvar("cg_drawSplatter", 0); 
     self setClientDvar("cg_drawDamageFlash", 0);
@@ -262,7 +270,8 @@ firstSpawn()
     self setClientDvar("bg_shock_movement", 0);
     self setClientDvar("bg_shock_lookControl", 0);
     self setClientDvar("scr_game_allowkillcam", 0);
-	self.hud_damagefeedback.color = (1,0,0); 
+	if(isDefined(self.hud_damagefeedback))
+		self.hud_damagefeedback.color = (1,0,0); 
     self.line = self createRectangle("CENTER", "LEFT", 0,-90,300,5,(1,1,0),"line_horizontal",1);
     // Subtle crosshair dot — light blue, low alpha
     self.crosshair = self createRectangle("CENTER", "CENTER", 0, 0, 3, 3, (0.5, 0.85, 1.0), "white", 1);
@@ -409,27 +418,47 @@ updateWeapon()
     self notify("updateWeapon");
     self endon("updateWeapon");
 
+    // Don't proceed until the weapon list is fully built
+    if(!isDefined(level.weaponsLoaded) || !level.weaponsLoaded)
+        return;
     if(self.current > (level.gungameList.size - 1))
     {
         self thread tryNuke();
         return;
     }
     //self iPrintlnBold(level.gungameList[self.current]);
+    weaponName = level.gungameList[self.current];
+    // Guard: skip if the weapon entry is missing, empty, or "none".
+    if(!isDefined(weaponName) || weaponName == "none" || weaponName == "")
+        return;
     variant = randomInt(9);
     if(getDvar("gunmode") == "Fungame")
         variant = 0;
-    if (isSubstr(level.gungameList[self.current], "_akimbo")) 
-	    self giveWeapon(level.gungameList[self.current],  variant, true); 
+    if (isSubstr(weaponName, "_akimbo")) 
+	    self giveWeapon(weaponName, variant, true); 
 	else 		
-	    self giveWeapon(level.gungameList[self.current],  variant, false);
+	    self giveWeapon(weaponName, variant, false);
+    // Verify the weapon was actually loaded — giveWeapon silently fails if
+    // the weapon asset doesn't exist in the engine.
+    if(!self hasWeapon(weaponName))
+    {
+        self.current++;
+        return;
+    }
     self giveWeapon("onemanarmy_mp");
-    self takeWeapon(self getCurrentWeapon());
-    self giveMaxAmmo(level.gungameList[self.current]);
-    self setWeaponAmmoClip(level.gungameList[self.current], 9999); // force full clip — giveMaxAmmo only fills stock/reserve
+    self takeWeapon("onemanarmy_mp");
+    // Skip ammo operations for weapons with no ammo pool (riotshield, defaultweapon, etc.)
+    // giveMaxAmmo on these causes "Weapon name none" engine errors.
+    if(weaponName != "riotshield_mp" && weaponName != "defaultweapon_mp")
+    {
+        self giveMaxAmmo(weaponName);
+        self setWeaponAmmoClip(weaponName, 9999);
+    }
     waitFrame();
-    self switchtoweaponimmediate(level.gungameList[self.current]);
+    self switchtoweaponimmediate(weaponName);
     waitFrame();
-    self setWeaponAmmoClip(level.gungameList[self.current], 9999); // re-apply after switch to prevent forced reload
+    if(weaponName != "riotshield_mp" && weaponName != "defaultweapon_mp")
+        self setWeaponAmmoClip(weaponName, 9999);
     if(level.state == "prematch" || level.state == "ingame")
         self show();
     // Always restore the correct speed, clamped to the mode's configured base floor.
@@ -485,7 +514,8 @@ refillOnFire()
     {
         self waittill("weapon_fired");
         weapon = self getCurrentWeapon();
-        self giveMaxAmmo(weapon);
+        if(weapon != "none" && weapon != "")
+            self giveMaxAmmo(weapon);
     }
 }
 onKilling() {
@@ -615,7 +645,7 @@ clearWarning(hud)
 } 
 createText(font,fontScale,align,relative,x,y,alpha,input,color,gcolor,galpha) 
 { 
-	text = self createFontString(font,fontScale,self); 
+	text = self createFontString(font,fontScale); 
 	text setPoint(align,relative,x,y); 
 	text.sort = 999;
  	text.alpha = alpha; 
@@ -675,28 +705,28 @@ scorepopup(amount)
  	// Each unique amount string burned a permanent configstring slot.
  	self.scoretext_amount.label = &"+";
  	self.scoretext_amount setValue(self.amount); 	
-	if(self.multiplier > 1) 	
+	// Clamp multitext index to the valid range [2..5] to prevent undefined access
+	mtIdx = self.multiplier;
+	if(mtIdx > 5) mtIdx = 5;
+	if(self.multiplier > 1 && isDefined(self.multitext[mtIdx])) 	
 	{ 	
-        self.multitext[self.multiplier].alpha = 1;  
-        self.multitext[self.multiplier] fadeOverTime(0.1);	 
-        self.multitext[self.multiplier].color = color; 		
-        self.multitext[self.multiplier].glowColor = glowColor; 	
+        self.multitext[mtIdx].alpha = 1;  
+        self.multitext[mtIdx] fadeOverTime(0.1);	 
+        self.multitext[mtIdx].color = color; 		
+        self.multitext[mtIdx].glowColor = glowColor; 	
 	}	
 	if(self.multiplier == 2) 
 	{ 	 
         self thread lowerMultitext(self.multiplier); 	
-        self.multitext[self.multiplier] setText("Double Kill!"); 
+        self.multitext[mtIdx] setText("Double Kill!"); 
 	}	    			     
 	else if(self.multiplier == 3) 	
-        self.multitext[self.multiplier] setText("Triple Kill!");	
+        self.multitext[mtIdx] setText("Triple Kill!");	
  	else if(self.multiplier == 4) 	
-        self.multitext[self.multiplier] setText("Multi Kill!");		
+        self.multitext[mtIdx] setText("Multi Kill!");		
  	else if(self.multiplier > 4) 	
 	{ 	  
         difference = self.multiplier - 4; 	
-        // FIX: Use a fixed string instead of randomized color codes.
-        // The old rainbow text generated a unique configstring for every kill spree
-        // (random colors = unique string every time = configstring leak).
         // FIX: Use .label + setValue() to avoid configstring leak per spree level.
         self.multitext[5].label = &"^1K^2i^3l^4l^5i^6n^7g ^1S^2p^3r^4e^5e ^3x";
         self.multitext[5] setValue(difference); 
@@ -718,8 +748,11 @@ lowerMultitext(multiplier)
  	self waittill_any("start_lowering", "disconnect");
 	for(i=2;i<6;i++) 	
     { 	  
-        self.multitext[i] fadeOverTime(3);	
-        self.multitext[i].alpha = 0; 
+        if(isDefined(self.multitext[i]))
+        {
+            self.multitext[i] fadeOverTime(3);	
+            self.multitext[i].alpha = 0; 
+        }
         wait .75; 
 	} 
 	wait 4; 
@@ -910,13 +943,18 @@ takeInvalidWeapon()
             continue;
         if(self isMantling())
             continue;
+        // Don't poll until weapons are fully loaded
+        if(!isDefined(level.weaponsLoaded) || !level.weaponsLoaded)
+            continue;
         weapon = self getCurrentWeapon();
+        // Skip if player is in a weapon transition ("none" is normal during switches)
+        if(weapon == "none" || weapon == "")
+            continue;
         if(weapon != level.gungameList[self.current])
         {
             self takeAllWeapons();
             self thread updateWeapon();
             // Short cooldown — just enough for switchtoweaponimmediate to settle.
-            // The old 2.5s wait was causing the visible mid-game-join delay.
             wait 0.5;
         }
     }
@@ -1084,11 +1122,9 @@ tryCreateMarkerIcons()
 createRectangle(align, relative, x, y, width, height, color, shader, sort)
 {
 	hud = newClientHudElem(self);
-	hud.sTexType = "bar";
+	hud.elemType = "icon";
 	hud.width = width;
 	hud.height = height;
-	hud.align = align;
-	hud.relative = relative;
 	hud.xOffset = 0;
 	hud.yOffset = 0;
 	hud.children = [];

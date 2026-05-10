@@ -94,14 +94,18 @@ CodeCallback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath
 				return;
 			}
 		}
-		damagehud = eAttacker createDamageHud();
-		damageHud setValue(iDamage);
-		damageHud moveOverTime(1);
-		damageHud.x -= 300;
-		damageHud.y += (-1 * randomInt(150));
-		damageHud fadeOverTime(1);
-		damageHud.alpha = 0;
-		eAttacker thread destroyDamageHud(damageHud);
+		// Guard: eAttacker is undefined for world/self damage (falls, barrels, etc.)
+		if(isPlayer(eAttacker) && eAttacker != self)
+		{
+			damagehud = eAttacker createDamageHud();
+			damageHud setValue(iDamage);
+			damageHud moveOverTime(1);
+			damageHud.x -= 300;
+			damageHud.y += (-1 * randomInt(150));
+			damageHud fadeOverTime(1);
+			damageHud.alpha = 0;
+			eAttacker thread destroyDamageHud(damageHud);
+		}
 		self thread updateDamageHud();
 	}
 	if(level.state != "ingame")

@@ -2106,13 +2106,20 @@ endGame( winner, endReasonText, nukeDetonated )
 	{
 		player closepopupMenu();
 		player closeInGameMenu();
-		//player notify ( "reset_outcome" ); // opens da scoreboard
-		//player thread maps\mp\gametypes\_playerlogic::spawnIntermission();
 	}	
-	if(level.players.size > 0)
+	if(level.players.size > 0 && getDvarInt("vote_enabled", 1))
 	{
 		level notify("spawnVote");
 		level waittill("endVote");
+	}
+	else
+	{
+		// No vote — show the normal scoreboard and leaderboard
+		foreach ( player in level.players )
+		{
+			player notify ( "reset_outcome" );
+			player thread maps\mp\gametypes\_playerlogic::spawnIntermission();
+		}
 	}
 	
 	

@@ -125,6 +125,7 @@ loadWeapons()
     }
     //level.gungameList[1] = setWeapon("rpg_mp");
     //level.gungameList[1] = "rpg_mp";
+    level.weaponsLoaded = true;
 }
 removeIDfromArray(id, weaponList)
 {
@@ -594,6 +595,7 @@ loadFungameList()
             level.gungameList[level.gungameList.size] = level.fungameWeapons[i];
         }
     }
+    level.weaponsLoaded = true; // signal that the list is ready for use
 }
 
 addFungameWeapon(weapon)

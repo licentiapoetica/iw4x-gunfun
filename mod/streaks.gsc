@@ -22,6 +22,8 @@ loadStreaks()
     // Pre-cache Jetpack FX at level init (loadfx must NOT be called at runtime).
     level._effect["jetpack_smoke"] = loadfx("smoke/smoke_trail_white_heli");
     level._effect["jetpack_flare"] = loadfx("misc/flares_cobra");
+    // Small bullet-impact explosion for the Explosive Bullets streak.
+    level._effect["bullet_explode"] = loadfx("explosions/grenadeExp_default");
 
     level.streaks3 = [];
     level.streaks6 = [];
@@ -115,7 +117,7 @@ setStreaks()
 }
 drawStreaks()
 {
-	if(isDefined(self.streakIcons[0]))
+	if(isDefined(self.streakIcons) && isDefined(self.streakIcons[0]))
 	{
 		for(i=0;i<3;i++)
 		{
@@ -321,7 +323,7 @@ Explosive()
 		forward = self getTagOrigin("j_head");
         end = self thread vector_scal(anglestoforward(self getPlayerAngles()),1000000);
         Location = BulletTrace( forward, end, 0, self )[ "position" ];
-		playFx(level._effect["claymore_explode"], Location); 	
+		playFx(level._effect["bullet_explode"], Location); 	
 		RadiusDamage(Location, 50, 30, 20, self );
 		//self RadiusDamage(Location,250,self.explodmg,self.explomindmg,self,"MOD_Explosive","barrel_mp");
 		wait self.explotime;
@@ -355,7 +357,7 @@ Jetpack()
     {
         if(self usebuttonpressed() && self.jetpack>0)
         {
-			self playsound("cobra_helicopter_dying_loop");
+			self playloopsound("cobra_helicopter_dying_loop");
             self setstance("crouch");
             playfx(level._effect["jetpack_smoke"],self gettagorigin("j_spine4"));
 			playfx(level._effect["jetpack_flare"],self gettagorigin("j_spine4"));
@@ -364,6 +366,8 @@ Jetpack()
             if(self getvelocity()[2]<300)
                 self setvelocity(self getvelocity()+(0,0,60));
         }
+        else
+            self stoploopsound("cobra_helicopter_dying_loop");
         if(self.jetpack < 80 &&!self usebuttonpressed())
             self.jetpack++;
         JETPACKBACK updateBar(self.jetpack/80);
@@ -694,6 +698,7 @@ NoReload()
 		if(self AttackButtonPressed())
 		{
 			current = self getCurrentWeapon();
+			if(current == "none" || current == "") { waitFrame(); continue; }
 			clip = self GetWeaponAmmoClip(current);
 			stock = self GetWeaponAmmoStock(current);
 			if(stock > 0)
