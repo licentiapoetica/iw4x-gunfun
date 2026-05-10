@@ -86,14 +86,6 @@ CodeCallback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath
 			iDamage = 50;
 	}
 	if(level.state == "ingame" && getDvarInt("show_damage_ui") == 1){
-		if(getDvar("g_gametype") == "gungame_team")
-		{
-			if(self.team == eAttacker.team)
-			{
-				[[level.callbackPlayerDamage]](eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, timeOffset); // tested?
-				return;
-			}
-		}
 		// Guard: eAttacker is undefined for world/self damage (falls, barrels, etc.)
 		if(isPlayer(eAttacker) && eAttacker != self)
 		{
@@ -185,8 +177,7 @@ CodeCallback_PlayerKilled(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon
 			self.score = 0;			
 		if(self.current > 0)
 			self.current--;	
-		if(getDvar("g_gametype") != "gungame_team")		
-			self.gungameKills--;	
+		self.gungameKills--;	
 		self thread mod\main::warning(3);
 	}
 	else if(sMeansOfDeath != "MOD_MELEE" || sWeapon == "riotshield_mp")
@@ -194,71 +185,17 @@ CodeCallback_PlayerKilled(eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon
 		eAttacker playlocalsound("mp_enemy_obj_captured");	
 		eAttacker notify("killed_enemy");
 		eAttacker.score += 100;
-		if(getDvar("g_gametype") != "gungame_team")
-		{
-			//iPrintlnBold(getDvar("gunmode"));
-			if(getDvar("gunmode") != "Kill Confirmed")
-			{
-				if(sWeapon == "riotshield_mp" && getDvar("gunmode") == "Fungame")
-					eAttacker.gungameKills += getDvarInt("gun_kills", 1);
-				else
-					eAttacker.gungameKills++;
-			}
-			else
-				thread mod\main::spawnDogTag(self, eAttacker);	
-		}		
-		else if(eAttacker.team != self)
-		{
-			if(eAttacker.team == "allies")
-			{
-				level.teamKills["allies"]++;
-				if(level.teamKills["allies"] >= getRequiredKills())
-				{
-					level.teamKills["allies"] = 0;
-					level.teamKills["allies_weapon"]++;
-					level notify("upgrade_allies");
-					thread mod\main::upgradeTeamUI("allies");
-					thread mod\main::upgradeEnemyWeaponUI("axis");
-				}
-			}	
-			else	
-			{
-				level.teamKills["axis"]++;
-				if(level.teamKills["axis"] >= eAttacker getRequiredKills())
-				{
-					level.teamKills["axis"] = 0;
-					level.teamKills["axis_weapon"]++;
-					level notify("upgrade_axis");
-					thread mod\main::upgradeTeamUI("axis");
-					thread mod\main::upgradeEnemyWeaponUI("allies");
-				}
-			}
-			eAttacker thread mod\main::scorepopup(100);
-            eAttacker.streaking++; 					
-		}	
+		// Riot shield kills give extra credit to match gun_kills requirement
+		if(sWeapon == "riotshield_mp")
+			eAttacker.gungameKills += getDvarInt("gun_kills", 1);
+		else
+			eAttacker.gungameKills++;
 	}
 	else{
 		eAttacker.score += 100;
 	}
 	self notify("killed_lethal"); 
 	[[level.callbackPlayerKilled]](eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, timeOffset, deathAnimDuration);
-}
-getRequiredKills()
-{
-	allies = 0;
-	axis = 0;
-	foreach(player in level.players)
-	{
-		if(player.team == "allies")
-			allies++;
-		else if(player.team == "axis")
-			axis++;	
-	}
-	if(self.team == "allies")
-		return allies;
-	else if(self.team == "axis")
-		return axis;
-	return 9999;		
 }
 
 getRequiredKillsOld()

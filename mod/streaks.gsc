@@ -22,8 +22,7 @@ loadStreaks()
     // Pre-cache Jetpack FX at level init (loadfx must NOT be called at runtime).
     level._effect["jetpack_smoke"] = loadfx("smoke/smoke_trail_white_heli");
     level._effect["jetpack_flare"] = loadfx("misc/flares_cobra");
-    // Small bullet-impact explosion for the Explosive Bullets streak.
-    level._effect["bullet_explode"] = loadfx("explosions/grenadeExp_default");
+    // level.explosionfx is loaded by _rank.gsc (helicopter_explosion_secondary_small)
 
     level.streaks3 = [];
     level.streaks6 = [];
@@ -157,7 +156,7 @@ onKilling()
 {
     self endon("death");
     self endon("disconnect");
-    level endon("nuke"); 
+    level endon("game_over"); 
 	spree = 0;
 	value = 3;
 	counter = 1;
@@ -277,9 +276,7 @@ Radioactive()
 {
 	self endon("disconnect");
 	self endon("death");
-	level endon("nuke");
-	// Cache once \u2014 getDvar() inside the inner foreach would cost ~120 native calls/sec.
-	isTeamGame = (getDvar("g_gametype") == "gungame_team");
+	level endon("game_over");
 	playFxOnTag( level.spawnGlow["enemy"], self, "pelvis" );
 	playFxOnTag( level.spawnGlow["friendly"], self, "j_head" );
 	while(1)
@@ -288,8 +285,6 @@ Radioactive()
 		foreach(player in level.players)
 		{
 			if(player == self)
-				continue;
-			if(isTeamGame && player.team == self.team)
 				continue;
 			if(Distance(player.origin,self.origin) < 120 && isAlive(player))
 			{
@@ -323,8 +318,8 @@ Explosive()
 		forward = self getTagOrigin("j_head");
         end = self thread vector_scal(anglestoforward(self getPlayerAngles()),1000000);
         Location = BulletTrace( forward, end, 0, self )[ "position" ];
-		playFx(level._effect["bullet_explode"], Location); 	
-		RadiusDamage(Location, 50, 30, 20, self );
+		playFx(level.explosionfx, Location); 	
+		RadiusDamage(Location, 30, 25, 15, self );
 		//self RadiusDamage(Location,250,self.explodmg,self.explomindmg,self,"MOD_Explosive","barrel_mp");
 		wait self.explotime;
 	}
@@ -428,7 +423,7 @@ DeleteIMS2(ims)
     // FIX: The original waited on "fuckemp" which was never notified anywhere —
     // this created a permanent zombie thread holding the ims entity reference.
     // Now we wait for nuke (end of match) and clean up the entity then.
-    level waittill("nuke");
+    level waittill("game_over");
     if(isDefined(ims))
 	    ims delete();
 }
@@ -444,7 +439,7 @@ DeleteIt(block, block2, block3, block4)
 }
 DeleteItOnNuke(block, block2, block3, block4)
 {
-    level waittill("nuke");
+    level waittill("game_over");
 	if(isDefined(block)) block delete();
 	if(isDefined(block2)) block2 delete();
 	if(isDefined(block3)) block3 delete();
@@ -563,8 +558,7 @@ scanPlayer()
 		{
 			if(player == self)
 				continue;
-			if((getDvar("g_gametype") == "gungame_team") && self.team == player.team)
-				continue;	
+
 			if(Distance(player.origin,self.origin) <= 1000)
 			{
 				go = true;
@@ -658,7 +652,7 @@ infoText(item)
 }
 Juggernaut()
 {
-	level endon("nuke");
+	level endon("game_over");
 	self.isJugger = true;
 	// FIX: Use the custom health system (actual_maxhealth/actual_health) instead of
 	// the raw engine maxhealth. Setting engine maxhealth directly broke the HUD display
@@ -685,12 +679,12 @@ destroyJuggOnNuke(juggIcon)
 {
 	self endon("death");
 	self endon("disconnect");
-	level waittill("nuke");
+	level waittill("game_over");
 	juggIcon destroy();
 }
 NoReload()
 {
-	level endon("nuke"); // FIX: was missing — thread survived past match end
+	level endon("game_over"); // FIX: was missing — thread survived past match end
 	self endon("death");
 	self endon("disconnect");
 	while(true)

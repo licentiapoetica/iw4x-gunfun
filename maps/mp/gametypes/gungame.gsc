@@ -55,7 +55,7 @@ onStartGameType()
 	setObjectiveHintText( "allies", "Be the first who cycled through all guns to win! \n \n Mod made by ^:Santahunter^7!" );
 	setObjectiveHintText( "axis", "Be the first who cycled through all guns to win! \n \n Mod made by ^:Santahunter^7!" );
 
-	level.killcam = false;
+	level.killcam = true; // enables final killcam at end of game
 	level.spawnMins = ( 0, 0, 0 );
 	level.spawnMaxs = ( 0, 0, 0 );
 	maps\mp\gametypes\_spawnlogic::addSpawnPoints( "allies", "mp_dm_spawn" );

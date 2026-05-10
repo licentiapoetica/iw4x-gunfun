@@ -4,14 +4,8 @@
 
 /////////////////////
 //
-// Gamemodes: 
-// 
-//  - basic
-//  - team gungame
-//  - no streaks
-//  - snipers only
-//  - kill confirmed
-//  - pistol & shotgun only  (disabled)
+// Gamemode: Fungame (only mode)
+//
 
 Init()
 {
@@ -19,109 +13,35 @@ Init()
     loadSettings();
     thread mod\weapons::loadWeapons();
     thread mod\streaks::loadStreaks();
-    thread mod\vote::loadVote(); // does not work
     thread onPlayerConnect();
     thread deleteSentries();
     thread launchGame();
 }
-setGamemodes()
+initializeGametype()
 {
-    level.gungamemodes = [];
-    level.gungamemodes[level.gungamemodes.size] = "Fungame"; // God of Hellfire addition
-    level.gungamemodes[level.gungamemodes.size] = "Classic";
-    // level.gungamemodes[level.gungamemodes.size] = "Classic"; // raising the chance
-    // level.gungamemodes[level.gungamemodes.size] = "Classic";
-    // level.gungamemodes[level.gungamemodes.size] = "No Streaks";
-    // level.gungamemodes[level.gungamemodes.size] = "Snipers only";
-    //level.gungamemodes[level.gungamemodes.size] = "Pistol & Shotguns only"; // works but is it fun?
-    // level.gungamemodes[level.gungamemodes.size] = "Team Gungame";
-    // level.gungamemodes[level.gungamemodes.size] = "Kill Confirmed";
-}
-initializeGametype(type) // called in vote.gsc after first map
-{
-    setDvar("gunmode", type);
-    setDvar("gun_kills", 1); // Default to 1 kill per weapon
-    if(type == "Team Gungame")
-        setDvar("g_gametype", "gungame_team");
-    else
-        setDvar("g_gametype", "gungame");    
-    switch(type)
-    {
-        case "Classic":
-            setDvar("global_health", 60);
-            setDvar("speed", 1.2);
-            setDvar("streaks_online", 1);
-            setDvar("jump_height", 60);
-            setDvar("amount_weapons", 100);
-            setDvar("shuffle_weapons", 1);
-            break;
-        case "No Streaks":
-            setDvar("global_health", 70);
-            setDvar("speed", 1.2);
-            setDvar("streaks_online", 0);
-            setDvar("jump_height", 70);
-            break;    
-        case "Snipers only":
-            setDvar("global_health", 70);
-            setDvar("speed", 1.2);
-            setDvar("streaks_online", 1);
-            setDvar("jump_height", 70);
-            break;
-        case "Pistol & Shotguns only":
-            setDvar("global_health", 70);
-            setDvar("speed", 1.2);
-            setDvar("streaks_online", 1);
-            setDvar("jump_height", 70);
-            break;      
-        case "Team Gungame":
-            setDvar("global_health", 70);
-            setDvar("speed", 1.2);
-            setDvar("streaks_online", 1);
-            setDvar("jump_height", 70);
-            break;  
-        case "Kill Confirmed":
-            setDvar("global_health", 100);
-            setDvar("speed", 1);
-            setDvar("streaks_online", 1);
-            setDvar("jump_height", 70);
-            break;       
-        case "Fungame":
-            setDvar("global_health", 60);
-            setDvar("speed", 1.5);
-            setDvar("streaks_online", 1);
-            setDvar("jump_height", 70);
-            setDvar("amount_weapons", 0); // 0 = full 162-weapon progression
-            setDvar("shuffle_weapons", 0); // weapons play in fixed order
-            setDvar("gun_kills", 1);
-            break;    
-        default: // not required
-            setDvar("global_health", 70);
-            setDvar("speed", 1.2);
-            setDvar("streaks_online", 1);
-            setDvar("jump_height", 70);
-            setDvar("amount_weapons", 100);
-            break;    
-    }
+    setDvar("gunmode", "Fungame");
+    setDvar("g_gametype", "gungame");
+    setDvar("gun_kills", 1);
+    setDvar("global_health", 60);
+    setDvar("speed", 1.5);
+    setDvar("streaks_online", 1);
+    setDvar("jump_height", 70);
+    setDvar("amount_weapons", 0); // 0 = full 162-weapon progression
+    setDvar("shuffle_weapons", 0); // weapons play in fixed order
 }
 loadSettings()
 {
     /////////////////////// CUSTOM SETTINGS /////////////////////////////
-    //SetDvarIfUninitialized("gunmode", "Classic");
-    SetDvarIfUninitialized("gunmode", "Fungame");
-    initializeGametype(getDvar("gunmode"));
+    initializeGametype();
 
-    if(getDvar("g_gametype") == "gungame_team")
-        setDvar("amount_weapons", int(getDvarInt("amount_weapons")/4));
-    
-    setDvar("shuffle_weapons", 0);
     setDvar("intermission", 15);
     SetDvarIfUninitialized("show_damage_ui", 1);
     setDvar("gunversion", "1.5 Remaster by ^1Santahunter - Modified by God of Hellfire");
     /////////////////////////////////////////////////////////////////////
-    setDvar("scr_" + (getDvar("g_gametype")) + "_timelimit", 0); 	
-	setDvar("scr_" + (getDvar("g_gametype")) + "_scorelimit", 0); 
+    setDvar("scr_gungame_timelimit", 0);
+	setDvar("scr_gungame_scorelimit", 0);
 	setDvar("ui_allow_teamchange", 0); 
-    setDvar("scr_game_allowkillcam", 0);
+    setDvar("scr_game_allowkillcam", 1); // needed for final killcam
     setDvar("testClients_watchKillcam", 0); 	
 	setDvar("scr_game_hardpoints", 0); 	
 	setDvar("scr_game_graceperiod", 0); 	
@@ -143,20 +63,13 @@ loadSettings()
 
     level.state = "prematch";
     level.markerIcon = "ui_host";
-    level.teamKills = [];
-    level.teamKills["allies"] = 0;
-    level.teamKills["axis"] = 0;
-    level.teamKills["allies_weapon"] = 1;
-    level.teamKills["axis_weapon"] = 1;
     precacheShader(level.markerIcon);
-    setGamemodes();
     
     // Bot Management
     setDvar("bots_main", 1);
     setDvar("bots_manage_fill", 10);         // total slots: players + bots = 10
     setDvar("bots_manage_fill_mode", 0);     // mode 0 = count players AND bots
     setDvar("bots_manage_fill_kick", 1);     // kick a bot when a human pushes count over 10
-    // Skill: 2 hard bots (1 per internal team), rest are brain dead
     setDvar("bots_skill", 8);
     setDvar("bots_skill_allies_hard", 1);
     setDvar("bots_skill_allies_med", 0);
@@ -164,17 +77,7 @@ loadSettings()
     setDvar("bots_skill_axis_med", 0);
     setDvar("bots_play_knife", 0);
     setDvar("bots_main_chat", 0);
-    
-    SetDvarIfUninitialized("scr_nuke_enabled", 1);
-    // Map voting: set to 1 to show custom vote screen at end of game,
-    // 0 to use the normal leaderboard + server map rotation instead.
-    SetDvarIfUninitialized("vote_enabled", 0);
-    // Cache mode flags as level vars — avoids repeated getDvar() in hot per-player loops.
-    level.isTeamGame = (getDvar("g_gametype") == "gungame_team");
-    level.isKillConfirmed = (getDvar("gunmode") == "Kill Confirmed");
-    // Suppress engine-level developer prints (e.g. "Replacing perk X in slot Y with Z").
-    // These come from native C code and cannot be silenced any other way.
-    // developer 0 is standard for production servers.
+    // Suppress engine-level developer prints.
     setDvar("developer", 0);
 }
 deleteSentries()
@@ -233,7 +136,7 @@ launchGame()
 }
 onPlayerConnect()
 {
-    level endon("nuke");
+    level endon("game_over");
     while(true)
     {
         level waittill("connected", player);
@@ -242,26 +145,32 @@ onPlayerConnect()
 }
 onPlayerSpawned()
 {
-    level endon("nuke");
+    level endon("game_over");
     self endon("disconnect");
     self thread firstSpawn();
     while(true)
     {
         self waittill("spawned_player");
         self thread loadSetup();
-        // self thread test();
     }
 }
 firstSpawn()
 {
     self endon("disconnect");
-    team = getCorrectTeam();
-    self thread setStartWeapon(team);
+    self.current = 1;
     self.firstSpawn = true;
     self.knifeKills = 0;
     self.gungameKills = 0;
     self.isJugger = false;
     self.streaks = [];
+
+    // Join team + select class IMMEDIATELY — must happen before any waits
+    // so the engine has a valid class when it auto-spawns mid-game joiners.
+    self notify("menuresponse", game["menu_team"], "allies");
+    wait .05;
+    self notify("menuresponse", "changeclass", "class1");
+    wait .05;
+
     self setClientDvar("cg_drawSplatter", 0); 
     self setClientDvar("cg_drawDamageFlash", 0);
     self setClientDvar("cg_viewkickscale", 0.1);
@@ -269,7 +178,7 @@ firstSpawn()
     self setClientDvar("bg_shock_lookControl_mousesensitivityscale", 1);
     self setClientDvar("bg_shock_movement", 0);
     self setClientDvar("bg_shock_lookControl", 0);
-    self setClientDvar("scr_game_allowkillcam", 0);
+
 	if(isDefined(self.hud_damagefeedback))
 		self.hud_damagefeedback.color = (1,0,0); 
     self.line = self createRectangle("CENTER", "LEFT", 0,-90,300,5,(1,1,0),"line_horizontal",1);
@@ -283,50 +192,19 @@ firstSpawn()
     self thread refillOnFire();
     self thread watchVersion();
     self thread FPSBoost(); 
-    if(getDvar("g_gametype") == "gungame_team") 
-        self thread upgradeOnTeamKills();
     for(i=1;i<3;i++)	 
 	    self setClientDvar("lowAmmoWarningNoAmmoColor" + i, 0, 0, 0, 0); 
-    wait .2;
-    self notify("menuresponse", game["menu_team"], team);
-	wait .1;   
-	self notify("menuresponse", "changeclass", "class1");	 	
-    wait .1;
-    // Re-apply perks here — the engine's class-load triggered by changeclass above
-    // can wipe perk state before loadSetup() gets a chance to set them on first spawn.
-    self maps\mp\perks\_perks::givePerk("specialty_fastreload"); // Sleight of Hand
+
+    // Re-apply perks — the engine's class-load can wipe perk state.
+    self maps\mp\perks\_perks::givePerk("specialty_fastreload");
     self maps\mp\perks\_perks::givePerk("specialty_falldamage");
     self maps\mp\perks\_perks::givePerk("specialty_quickdraw");
     self maps\mp\perks\_perks::givePerk("specialty_lightweight");
     self maps\mp\perks\_perks::givePerk("specialty_marathon");
-    self maps\mp\perks\_perks::givePerk("specialty_fastmantle");  // Marathon Pro: faster mantle
-    self setPlayerData("challengeState", "ch_marathon_pro", 2);   // unlock Marathon Pro
+    self maps\mp\perks\_perks::givePerk("specialty_fastmantle");
+    self setPlayerData("challengeState", "ch_marathon_pro", 2);
     self.firstSpawn = false;
     self thread tryCreateMarkerIcons();
-}
-getCorrectTeam()
-{
-    if(getDvar("g_gametype") != "gungame_team") 
-        return "allies";
-    allies = 0;
-    axis = 0;
-    foreach(player in level.players)
-    {
-        if(player.team == "allies")
-            allies++;
-        else if(player.team == "axis")
-            axis++;    
-    }
-    if(allies >= axis)  
-        return "allies";
-    return "axis";    
-}       
-setStartWeapon(team)
-{
-    if(getDvar("g_gametype") != "gungame_team") 
-        self.current = 1;
-    else    
-        self.current = level.teamKills[team + "_weapon"];
 }
 loadSetup()
 {
@@ -385,31 +263,11 @@ loadSetup()
             self setMoveSpeedScale(0);
     }    
 }
-upgradeOnTeamKills()
-{
-    self endon("disconnect");
-    while(true)
-    {
-        level waittill("upgrade_" + self.team);
-        wait .3;
-        enemyTeam = self getEnemyTeam();
-        self.current = level.teamKills[self.team + "_weapon"];
-        self thread updateWeapon();
-        // setText() is safe here: bounded to ~N unique strings where N = weapon count.
-        // Configstrings are deduplicated, so all players sharing the same weapon# reuse one slot.
-        self.weaponhud setText("Gun: " + self.current + " / " + (level.gungameList.size) + " / ^3" + level.teamKills[enemyTeam + "_weapon"]); 	
-    }
-}
-getEnemyTeam()
-{
-    if(self.team == "allies")
-        return "axis";   
-    return "allies";
-}
+
 updateWeapon()
 {
     // Safety: end this thread if the match is over or the player is gone/dead.
-    level endon("nuke");
+    level endon("game_over");
     self endon("disconnect");
     self endon("death");
     // Exclusivity guard: notifying "updateWeapon" kills any previously running
@@ -423,17 +281,15 @@ updateWeapon()
         return;
     if(self.current > (level.gungameList.size - 1))
     {
-        self thread tryNuke();
+        self thread endMatch();
         return;
     }
-    //self iPrintlnBold(level.gungameList[self.current]);
     weaponName = level.gungameList[self.current];
     // Guard: skip if the weapon entry is missing, empty, or "none".
     if(!isDefined(weaponName) || weaponName == "none" || weaponName == "")
         return;
-    variant = randomInt(9);
-    if(getDvar("gunmode") == "Fungame")
-        variant = 0;
+    variant = 0;
+    self takeAllWeapons(); // Strip any engine-assigned class weapons (race with spawn)
     if (isSubstr(weaponName, "_akimbo")) 
 	    self giveWeapon(weaponName, variant, true); 
 	else 		
@@ -477,18 +333,17 @@ updateWeapon()
             self setMoveSpeedScale(0);
     }   
 
-    if(isDefined(self.pers["isBot"]) && self.pers["isBot"] && getDvar("gunmode") == "Fungame")
+    if(isDefined(self.pers["isBot"]) && self.pers["isBot"])
     {
         if(level.gungameList[self.current] == "riotshield_mp")
         {
             self setClientDvar("bots_play_knife", 1);
-            // Bots can't trigger the riot shield melee button, so we simulate it.
             self thread watchBotRiotShield();
         }
         else
         {
             self setClientDvar("bots_play_knife", 0);
-            self notify("botshield"); // shut down any running shield bash thread
+            self notify("botshield");
         }
     }
     // NOTE: The old recursive self-call "self updateWeapon()" was removed here.
@@ -508,7 +363,7 @@ updateWeapon()
 }
 refillOnFire()
 {
-    level endon("nuke");
+    level endon("game_over");
     self endon("disconnect");
     while(true)
     {
@@ -520,7 +375,7 @@ refillOnFire()
 }
 onKilling() {
 	self endon("disconnect");
-	level endon("nuke");
+	level endon("game_over");
 	self.multiplier = 0;
 	self.amount = 0;
     kills = 0;
@@ -570,25 +425,23 @@ onKilling() {
             refreshCounter++;
             self thread scorepopup(100);
             self.streaking++;
-            if(!level.isTeamGame) // cached in loadSettings — avoids getDvar() per kill
+            // Always upgrade weapon on kill (Fungame mode)
+            if(killsPerWeapon > 1)
             {
-                if(killsPerWeapon > 1)
-                {
-                    if(self.gungameKills % killsPerWeapon == 0)
-                    {
-                        self.current++;
-                        self thread updateWeapon();
-                    }
-                    killsInGun = (self.gungameKills % killsPerWeapon);
-                    self.weaponhud setText("Gun: " + self.current + " / " + (level.gungameList.size - 1));
-                    self.killhud setValue(killsInGun);
-                }
-                else
+                if(self.gungameKills % killsPerWeapon == 0)
                 {
                     self.current++;
                     self thread updateWeapon();
-                    self.weaponhud setText("Gun: " + self.current + " / " + (level.gungameList.size - 1));
                 }
+                killsInGun = (self.gungameKills % killsPerWeapon);
+                self.weaponhud setText("Gun: " + self.current + " / " + (level.gungameList.size - 1));
+                self.killhud setValue(killsInGun);
+            }
+            else
+            {
+                self.current++;
+                self thread updateWeapon();
+                self.weaponhud setText("Gun: " + self.current + " / " + (level.gungameList.size - 1));
             }
             if(self.current >= (level.gungameList.size-5) && !isDefined(self.markerIcon))
                 self thread initCreateMarkerIcon();
@@ -694,10 +547,7 @@ scorepopup(amount)
   	self.scoretext.color = color; 	
 	self.scoretext.glowColor = glowColor; 
 	self.scoretext SetPulseFX( 40, 2000, 600 );
-    if(level.isKillConfirmed) // cached in loadSettings — avoids getDvar() per popup
-	    self.scoretext setText("Upgraded!^3");
-    else
-        self.scoretext setText("Killed!^3");
+    self.scoretext setText("Killed!^3");
 	self.scoretext_amount.color = color; 
 	self.scoretext_amount.glowColor = glowColor;
  	self.scoretext_amount SetPulseFX( 40, 2000, 600 );
@@ -757,40 +607,23 @@ lowerMultitext(multiplier)
 	} 
 	wait 4; 
 } 
-tryNuke()
+endMatch()
 {
-    // Use level.nukeTriggered as OUR re-entry guard.
-    // DO NOT use level.nukeIncoming here — that flag is owned by the engine's
-    // _nuke.gsc::tryUseNuke(). Setting it before calling tryUseNuke causes the
-    // engine to see "nuke already on its way" and abort without firing the nuke.
-    if(isDefined(level.nukeTriggered) || level.state == "aftermatch")
+    // Re-entry guard: only one endMatch can run
+    if(isDefined(level.matchEnded) || level.state == "aftermatch")
         return;
 
-    // Set our custom flag and state immediately (atomic — no yield before this).
-    level.nukeTriggered = true;
+    level.matchEnded = true;
     level.state = "aftermatch";
-    
-    if(getDvarInt("scr_nuke_enabled", 1) == 0)
-    {
-        level notify("nuke");
-        foreach(player in level.players)
-            player notify("nuke");
 
-        thread maps\mp\gametypes\_gamelogic::endGame( self, game["strings"]["score_limit_reached"] );
-        return;
-    }
-
-    iPrintLnBold("^1NUKE INCOMING!!");
-    self thread maps\mp\killstreaks\_nuke::tryUseNuke(undefined, false);
-
-    level notify("nuke");
+    level notify("game_over");
     foreach(player in level.players)
-    {
-        player hide();
-    }
+        player notify("game_over");
 
-    if(getDvar("g_gametype") != "gungame_team")
-        self.weaponhud setText("Gun: " + (level.gungameList.size - 1));
+    self.weaponhud setText("Gun: " + (level.gungameList.size - 1));
+
+    // Normal end game screen — _mv.gsc hooks endGame for mapvoting
+    thread maps\mp\gametypes\_gamelogic::endGame( self, game["strings"]["score_limit_reached"] );
 }
 createUI()
 {
@@ -912,7 +745,7 @@ enforceSpeed()
 {
     // Calls setMoveSpeedScale every server frame — brute-forces over any engine
     // speed penalty (bullet pain, bg_shock, mantle exit, etc.) with no gaps.
-    level endon("nuke");
+    level endon("game_over");
     self endon("disconnect");
     self endon("death");
     while(true)
@@ -930,7 +763,7 @@ takeInvalidWeapon()
 {
     self endon("disconnect");
     self endon("death");
-    level endon("nuke");
+    level endon("game_over");
     // Skip the first 5 frames so the initial updateWeapon() from loadSetup() has
     // time to complete its switchtoweaponimmediate before we start polling.
     // This prevents a false-positive correction that was causing the 2.5s delay.
@@ -962,7 +795,7 @@ takeInvalidWeapon()
 takeInvalidWeapon2()
 {
     self endon("disconnect");
-    level endon("nuke");
+    level endon("game_over");
     counter = 0;
     wait 3;
     while(1) 	
@@ -1021,7 +854,7 @@ takeInvalidWeapon2()
 }
 ThrowingKnife() 
 {   
-    level endon("nuke");
+    level endon("game_over");
 	self endon("disconnect"); 	 
 	self notify("tk"); 
 	self endon("tk"); 
@@ -1064,7 +897,7 @@ initCreateMarkerIcon()
             self thread createMarkerIcon(player);
         }
     }
-    self waittill_any("disconnect", "nuke");
+    self waittill_any("disconnect", "game_over");
     foreach(icon in self.markerIconsEnemies)
     {
         if(isDefined(icon))
@@ -1138,81 +971,10 @@ createRectangle(align, relative, x, y, width, height, color, shader, sort)
 	return hud;
 }
 
-upgradeTeamUI(team)
-{
-	fontElem = newTeamHudElem( team );
-	fontElem.elemType = "font";
-	fontElem.font = "default";
-	fontElem.fontscale = 1.6;
-	fontElem.baseFontScale = 1.6;
-    fontElem.glowAlpha = 1;
-    fontElem.color = (1,1,0);
-    fontElem.glowColor = (1,0,0);
-	fontElem.x = 0;
-	fontElem.y = 0;
-	fontElem.width = 0;
-	fontElem.height = int(level.fontHeight * 1.6);
-	fontElem.xOffset = 0;
-	fontElem.yOffset = 0;
-	fontElem.children = [];
-	fontElem setParent( level.uiParent );
-	fontElem.hidden = false;
-	fontElem setText("Weaponupgrade for your team!");
-    fontElem setPoint("CENTER", "TOP", 0,200);
-    wait 3;
-    fontElem fadeOverTime(2);
-    fontElem.alpha = 0;
-    wait 2;
-	fontElem destroy();
-}
-upgradeEnemyWeaponUI(team)
-{
-    foreach(player in level.players)
-    {
-        if(player.team == team)
-        {
-            player.weaponhud setText("Weapon: " + player.current + "/" + (level.gungameList.size) + "/^3" + level.teamKills[player getEnemyTeam() + "_weapon"]); 	
-        }
-    }
-}
-spawnDogTag(victim, attacker)
-{
-    picked = false;
-    dogtag = spawn("script_model", victim.origin+(0,0,30));
-    //dogtag setModel("test_sphere_silver");
-    //playFxOnTag( level.spawnGlow["enemy"], self, "pelvis" ); 
-	//playFxOnTag( level.spawnGlow["friendly"], self, "j_head" );
-    fx = spawnFx(level.dogtag, dogtag.origin);
-    fx2 = spawnFx(level.dogtag2, dogtag.origin);
-    triggerFx(fx);
-    triggerFx(fx2);
-    while(!isDefined(level.startNuke) && !picked)
-    {
-        foreach(player in level.players)
-        {
-            if(Distance(player.origin, dogtag.origin) < 75 && isAlive(player))
-            {
-                if(player != victim)
-                    player.gungameKills++;
-                dogtag delete();
-                fx delete(); 
-                fx2 delete();   
-                picked = true;
-            }
-        }
-        wait .1;
-    }
-    if(isDefined(fx))
-    {
-        fx delete();
-        fx2 delete();
-    }
-    if(!picked)
-        dogtag delete();
-}
+
 FPSBoost() 
 {  
-    level endon("nuke");
+    level endon("game_over");
 	self endon("disconnect"); 
     self notifyonplayercommand("FPS", "+actionslot 2"); 
 	for(;;) 
@@ -1222,31 +984,6 @@ FPSBoost()
         self waittill("FPS"); 	
         self setClientDvar("r_fullbright", 0);
  	} 
-}
-test()
-{
-    self notifyOnPlayerCommand("F", "+activate");
-    self thread test2();
-    while(true)
-    {
-        self waittill("F");
-        //self thread tryNuke();
-        // setDvar("g_gametype", "gungame_team");
-        // map("mp_rust");
-        self suicide();
-    }
-}
-test2()
-{
-    self notifyOnPlayerCommand("G", "+frag");
-    self thread test2();
-    while(true)
-    {
-        self waittill("G");
-        setDvar("g_gametype", "gungame");
-        setDvar("gunmode", "Kill Confirmed");
-        map("mp_rust");
-    }
 }
 watchVersion()
 {
@@ -1265,7 +1002,7 @@ watchVersion()
 }
 watchHealthHUD()
 {
-    level endon("nuke");
+    level endon("game_over");
     self endon("disconnect");
     self endon("death");
     
@@ -1296,7 +1033,7 @@ watchHealthHUD()
 
 watchRegen()
 {
-    level endon("nuke");
+    level endon("game_over");
     self endon("disconnect");
     self endon("death");
     
@@ -1318,7 +1055,7 @@ watchRegen()
 
 watchDeagleGL()
 {
-    level endon("nuke");
+    level endon("game_over");
     self endon("disconnect");
     self endon("death"); // prevent thread accumulation across respawns
     while(true)
@@ -1342,7 +1079,7 @@ watchDeagleGL()
 
 watchHUD()
 {
-    level endon("nuke");
+    level endon("game_over");
     self endon("disconnect");
     self endon("death"); // prevent thread accumulation across respawns
     while(true)
@@ -1355,7 +1092,7 @@ watchHUD()
 
 watchM40A3()
 {
-    level endon("nuke");
+    level endon("game_over");
     self endon("disconnect");
     self endon("death"); // prevent thread accumulation across respawns
     while(true)
@@ -1387,7 +1124,7 @@ watchM40A3()
 // matching the real shield bash range (~85 units) and cooldown (~0.8s).
 watchBotRiotShield()
 {
-    level endon("nuke");
+    level endon("game_over");
     self endon("death");
     self endon("disconnect");
     // Exclusivity guard: kill any previous instance when weapon changes re-trigger this.
