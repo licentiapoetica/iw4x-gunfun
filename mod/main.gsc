@@ -36,7 +36,7 @@ loadSettings()
 
     setDvar("intermission", 15);
     SetDvarIfUninitialized("show_damage_ui", 1);
-    setDvar("gunversion", "1.5 Remaster by ^1Santahunter - Modified by God of Hellfire");
+    setDvar("gunversion", "");
     /////////////////////////////////////////////////////////////////////
     setDvar("scr_gungame_timelimit", 0);
 	setDvar("scr_gungame_scorelimit", 0);
@@ -64,6 +64,8 @@ loadSettings()
     level.state = "prematch";
     level.markerIcon = "ui_host";
     precacheShader(level.markerIcon);
+    precacheShader("line_horizontal");
+    precacheShader("white");
     
     // Bot Management
     setDvar("bots_main", 1);
@@ -163,6 +165,9 @@ firstSpawn()
     self.gungameKills = 0;
     self.isJugger = false;
     self.streaks = [];
+    self.pers["lastEarnedStreak"] = ""; // prevent bot chat crash on undefined comparison
+    self.pers["team"] = "allies";
+    self.team = "allies";
 
     // Join team + select class IMMEDIATELY — must happen before any waits
     // so the engine has a valid class when it auto-spawns mid-game joiners.
@@ -289,7 +294,7 @@ updateWeapon()
     if(!isDefined(weaponName) || weaponName == "none" || weaponName == "")
         return;
     variant = 0;
-    self takeAllWeapons(); // Strip any engine-assigned class weapons (race with spawn)
+    self takeAllWeapons();
     if (isSubstr(weaponName, "_akimbo")) 
 	    self giveWeapon(weaponName, variant, true); 
 	else 		

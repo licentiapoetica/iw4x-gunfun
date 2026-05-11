@@ -240,7 +240,11 @@ giveStreak(streak)
             self.moveSpeedScaler = 1.6; // keep cached baseline in sync (was: self.setMoveSpeedScale = 1.6 — typo, set entity field not call function)
             break;
         case "Riotshield":
-            self AttachShieldModel( "weapon_riot_shield_mp", "tag_shield_back" );
+            if(!isDefined(self.hasBackShield) || !self.hasBackShield)
+            {
+                self AttachShieldModel( "weapon_riot_shield_mp", "tag_shield_back" );
+                self.hasBackShield = true;
+            }
             break; 
         case "Jetpack":
             self thread Jetpack();

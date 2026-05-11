@@ -38,8 +38,8 @@ onStartGameType()
 {
 	setClientNameMode("auto_change");
 
-	setObjectiveText( "allies", "Press ^3[{+actionslot 2}] ^7for FPS-Boost  \n\n Mod made by ^:Santahunter^7!" );
-	setObjectiveText( "axis", "Press ^3[{+actionslot 2}] ^7for FPS-Boost \n\n Mod made by ^:Santahunter^7!" );
+	setObjectiveText( "allies", "Mod made by Santahunter \n\n Modified by God of Hellfire" );
+	setObjectiveText( "axis", "Mod made by Santahunter \n\n Modified by God of Hellfire" );
 
 	if ( level.splitscreen )
 	{
@@ -52,10 +52,10 @@ onStartGameType()
 		setObjectiveScoreText( "axis", &"OBJECTIVES_DM_SCORE" );
 	}
 	
-	setObjectiveHintText( "allies", "Be the first who cycled through all guns to win! \n \n Mod made by ^:Santahunter^7!" );
-	setObjectiveHintText( "axis", "Be the first who cycled through all guns to win! \n \n Mod made by ^:Santahunter^7!" );
+	setObjectiveHintText( "allies", "Mod made by Santahunter \n\n Modified by God of Hellfire" );
+	setObjectiveHintText( "axis", "Mod made by Santahunter \n\n Modified by God of Hellfire" );
 
-	level.killcam = true; // enables final killcam at end of game
+	level.killcam = false;
 	level.spawnMins = ( 0, 0, 0 );
 	level.spawnMaxs = ( 0, 0, 0 );
 	maps\mp\gametypes\_spawnlogic::addSpawnPoints( "allies", "mp_dm_spawn" );

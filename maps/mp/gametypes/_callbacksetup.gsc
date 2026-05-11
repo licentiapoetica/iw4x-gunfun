@@ -46,6 +46,17 @@ CodeCallback_PlayerConnect()
 		level waittill( "eternity" );
 
 	self endon("disconnect");
+	// Initialize pers values before any engine/bot system can check them
+	if(!isDefined(self.pers["lastEarnedStreak"]))
+		self.pers["lastEarnedStreak"] = "";
+	if(!isDefined(self.pers["team"]))
+		self.pers["team"] = "allies";
+	if(!isDefined(self.pers["deaths"]))
+		self.pers["deaths"] = 0;
+	if(!isDefined(self.pers["kills"]))
+		self.pers["kills"] = 0;
+	if(!isDefined(self.team))
+		self.team = "allies";
 	[[level.callbackPlayerConnect]]();
 }
 
