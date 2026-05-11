@@ -5,126 +5,7 @@
 
 loadWeapons()
 {
-    level.gungameList = [];
-    weaponList = [];
-    amount_of_weapons = getDvarInt("amount_weapons");
-
-    if(getDvar("gunmode") == "Snipers only")
-    {
-        amount_of_weapons = int(amount_of_weapons/2);
-        weaponList[weaponList.size] = "barrett_mp";
-        weaponList[weaponList.size] = "wa2000_mp";
-        weaponList[weaponList.size] = "m21_mp";
-        weaponList[weaponList.size] = "cheytac_mp";
-    }
-    else if(getDvar("gunmode") == "Pistol & Shotguns only")
-    {
-        amount_of_weapons = int(amount_of_weapons/2);
-        weaponList[weaponList.size] = "deserteagle_mp";
-        weaponList[weaponList.size] = "coltanaconda_mp";
-        weaponList[weaponList.size] = "beretta_mp";
-        // semi auto pistols
-        weaponList[weaponList.size] = "tmp_mp";
-        weaponList[weaponList.size] = "glock_mp";
-        weaponList[weaponList.size] = "beretta393_mp";
-        weaponList[weaponList.size] = "pp2000_mp";
-        // shotguns
-        weaponList[weaponList.size] = "ranger_mp";
-        weaponList[weaponList.size] = "model1887_mp";
-        weaponList[weaponList.size] = "striker_mp";
-        weaponList[weaponList.size] = "aa12_mp";
-        weaponList[weaponList.size] = "m1014_mp";
-        weaponList[weaponList.size] = "spas12_mp";
-    }
-    else if(getDvar("gunmode") == "Fungame")
-    {
-        loadFungameList();
-        return;
-    }
-    else
-    {
-        // pistols
-        weaponList[weaponList.size] = "usp_mp";
-        weaponList[weaponList.size] = "deserteagle_mp";
-        weaponList[weaponList.size] = "deserteagle_akimbo_mp"; // GL deagle
-        weaponList[weaponList.size] = "coltanaconda_mp";
-        weaponList[weaponList.size] = "beretta_mp";
-        // semi auto pistols
-        weaponList[weaponList.size] = "tmp_mp";
-        weaponList[weaponList.size] = "glock_mp";
-        weaponList[weaponList.size] = "beretta393_mp";
-        weaponList[weaponList.size] = "pp2000_mp";
-        // shotguns
-        weaponList[weaponList.size] = "ranger_mp";
-        weaponList[weaponList.size] = "model1887_mp";
-        weaponList[weaponList.size] = "striker_mp";
-        weaponList[weaponList.size] = "aa12_mp";
-        weaponList[weaponList.size] = "m1014_mp";
-        weaponList[weaponList.size] = "spas12_mp";
-        // rocket launcher
-        weaponList[weaponList.size] = "m79_mp";
-        weaponList[weaponList.size] = "rpg_mp";
-        weaponList[weaponList.size] = "at4_mp";
-        //weaponList[weaponList.size] = "javelin_mp";
-        // assault rifles
-        weaponList[weaponList.size] = "ak47_mp";
-        weaponList[weaponList.size] = "m16_mp";
-        weaponList[weaponList.size] = "m4_mp";
-        weaponList[weaponList.size] = "fn2000_mp";
-        weaponList[weaponList.size] = "masada_mp";
-        weaponList[weaponList.size] = "famas_mp";
-        weaponList[weaponList.size] = "fal_mp";
-        weaponList[weaponList.size] = "scar_mp";
-        weaponList[weaponList.size] = "tavor_mp";
-        weaponList[weaponList.size] = "ak47classic_mp";
-        // sub machine guns
-        weaponList[weaponList.size] = "mp5k_mp";
-        weaponList[weaponList.size] = "uzi_mp";
-        weaponList[weaponList.size] = "p90_mp";
-        weaponList[weaponList.size] = "kriss_mp";
-        weaponList[weaponList.size] = "ump45_mp";
-        weaponList[weaponList.size] = "ak74u_mp";
-        // light machine guns
-        weaponList[weaponList.size] = "rpd_mp";
-        weaponList[weaponList.size] = "sa80_mp";
-        weaponList[weaponList.size] = "mg4_mp";
-        weaponList[weaponList.size] = "m240_mp";
-        weaponList[weaponList.size] = "aug_mp";
-        // sniper
-        weaponList[weaponList.size] = "barrett_mp";
-        weaponList[weaponList.size] = "wa2000_mp";
-        weaponList[weaponList.size] = "m21_mp";
-        weaponList[weaponList.size] = "cheytac_mp";
-        weaponList[weaponList.size] = "dragunov_mp";
-        weaponList[weaponList.size] = "m40a3_mp";
-        // special
-        weaponList[weaponList.size] = "ac130_mp";
-        //weaponList[weaponList.size] = "riotshield_mp";
-        
-    }
-
-    shuffle = getDvarInt("shuffle_weapons");
-    level.gungameList[0] = "defaultweapon_mp";
-    for(i = 1; i <= amount_of_weapons; i++)
-    {
-        if(weaponList.size <= 0) break;
-
-        if(shuffle)
-            id = randomInt(weaponList.size); 
-        else
-            id = (i - 1) % weaponList.size;
-
-        level.gungameList[level.gungameList.size] = setWeapon(weaponList[id]);
-        
-        // Only remove specific weapons if we still have enough unique ones left
-        if(weaponList.size > 5) 
-        {
-            if(weaponList[id] == "m79_mp" || weaponList[id] == "at4_mp" || weaponList[id] == "rpg_mp" || weaponList[id] == "riotshield_mp" || weaponList[id] == "dragunov_mp" || weaponList[id] == "m40a3_mp" || weaponList[id] == "peacekeeper_mp" || weaponList[id] == "deserteagle_akimbo_mp")
-                weaponList = removeIDfromArray(id, weaponList);
-        }
-    }
-    //level.gungameList[1] = setWeapon("rpg_mp");
-    //level.gungameList[1] = "rpg_mp";
+    loadFungameList();
 }
 removeIDfromArray(id, weaponList)
 {
@@ -594,6 +475,7 @@ loadFungameList()
             level.gungameList[level.gungameList.size] = level.fungameWeapons[i];
         }
     }
+    level.weaponsLoaded = true; // signal that the list is ready for use
 }
 
 addFungameWeapon(weapon)
