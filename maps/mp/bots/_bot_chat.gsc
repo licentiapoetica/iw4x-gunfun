@@ -1102,8 +1102,10 @@ bot_chat_streak( streakCount )
 	
 	if ( streakCount == 25 )
 	{
-		if ( isDefined( self.pers[ "lastEarnedStreak" ] ) && self.pers[ "lastEarnedStreak" ] == "nuke" )
+		if ( isDefined( self.pers ) && isDefined( self.pers[ "lastEarnedStreak" ] ) )
 		{
+			if ( self.pers[ "lastEarnedStreak" ] == "nuke" )
+			{
 			switch ( randomint( 5 ) )
 			{
 				case 0:

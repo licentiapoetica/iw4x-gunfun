@@ -26,8 +26,12 @@ initializeGametype()
     setDvar("speed", 1.5);
     setDvar("streaks_online", 1);
     setDvar("jump_height", 70);
-    setDvar("amount_weapons", 40); // 0 = full 162-weapon progression
+    setDvar("amount_weapons", 0); // 0 = full 162-weapon progression
     setDvar("shuffle_weapons", 0); // weapons play in fixed order
+    
+    // Faction fixes for MW2 MatchData enums
+    setDvar("allieschar", "sas_urban");
+    setDvar("axischar", "opforce_composite");
 }
 loadSettings()
 {
@@ -35,7 +39,6 @@ loadSettings()
     initializeGametype();
 
     setDvar("intermission", 15);
-    setDvar("sv_customstats", 0);
     SetDvarIfUninitialized("show_damage_ui", 1);
     setDvar("gunversion", "");
     /////////////////////////////////////////////////////////////////////
@@ -143,6 +146,7 @@ onPlayerConnect()
     while(true)
     {
         level waittill("connected", player);
+        player.pers["lastEarnedStreak"] = ""; // Initialize early to prevent bot chat crash
         player thread onPlayerSpawned();
     }
 }
@@ -166,7 +170,6 @@ firstSpawn()
     self.gungameKills = 0;
     self.isJugger = false;
     self.streaks = [];
-    self.pers["lastEarnedStreak"] = ""; // prevent bot chat crash on undefined comparison
     self.pers["team"] = "allies";
     self.team = "allies";
 
