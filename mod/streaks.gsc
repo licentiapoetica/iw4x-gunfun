@@ -677,14 +677,17 @@ Juggernaut()
     juggIcon SetTargetEnt(self);
 	self thread destroyJuggOnNuke(juggIcon);
 	self waittill_any("death", "disconnect", "isMarked");
-	juggicon destroy();
+	if(isDefined(juggicon))
+	    juggicon destroy();
 }
 destroyJuggOnNuke(juggIcon)
 {
 	self endon("death");
 	self endon("disconnect");
+	self endon("isMarked");
 	level waittill("game_over");
-	juggIcon destroy();
+	if(isDefined(juggIcon))
+	    juggIcon destroy();
 }
 NoReload()
 {

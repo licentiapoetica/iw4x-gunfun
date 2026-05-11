@@ -26,7 +26,7 @@ initializeGametype()
     setDvar("speed", 1.5);
     setDvar("streaks_online", 1);
     setDvar("jump_height", 70);
-    setDvar("amount_weapons", 0); // 0 = full 162-weapon progression
+    setDvar("amount_weapons", 40); // 0 = full 162-weapon progression
     setDvar("shuffle_weapons", 0); // weapons play in fixed order
 }
 loadSettings()
