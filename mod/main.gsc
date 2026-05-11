@@ -35,6 +35,7 @@ loadSettings()
     initializeGametype();
 
     setDvar("intermission", 15);
+    setDvar("sv_customstats", 0);
     SetDvarIfUninitialized("show_damage_ui", 1);
     setDvar("gunversion", "");
     /////////////////////////////////////////////////////////////////////
